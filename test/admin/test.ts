@@ -1,9 +1,9 @@
-import type { FirestoreData, FirestoreKey } from 'firestore-orm/admin';
+import type { FirestoreData, FirestoreKey } from '../../admin/types.js';
 
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-import { FirestoreDocument, FirestoreCollection, initializeFirestore, batchDelete } from 'firestore-orm/admin';
+import { FirestoreDocument, FirestoreCollection, initializeFirestore, batchDelete } from '../../admin/index.js';
 
 // Initialize Firebase Admin with emulator
 const app = initializeApp({
@@ -41,12 +41,14 @@ interface UserData extends FirestoreData {
 class User extends FirestoreDocument<UserKey, UserData> {
   protected static pathTemplate = 'test/{uid}';
 
-  static defaultData: UserData = {
-    name: '',
-    email: '',
-    age: 0,
-    createdAt: new Date(),
-  };
+  protected static get defaultData(): UserData {
+    return {
+      name: '',
+      email: '',
+      age: 0,
+      createdAt: new Date(),
+    };
+  }
 }
 
 // Test functions

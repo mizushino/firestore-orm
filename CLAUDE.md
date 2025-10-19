@@ -58,20 +58,66 @@ firestore-orm/
 
 **Usage Example:**
 ```typescript
+import { newId, timeId } from 'firestore-orm/shared/utils';
+
 class User extends FirestoreDocument<UserKey, UserData> {
   protected static pathTemplate = 'users/{uid}';
 
-  static defaultData: UserData = {
-    name: '',
-    email: '',
-    age: 0,
-  };
+  // Required: Define default data structure (use getter for dynamic values)
+  protected static get defaultData(): UserData {
+    return {
+      name: '',
+      email: '',
+      age: 0,
+    };
+  }
 }
 
+// Basic usage with explicit key
 const user = new User({ uid: 'user123' });
 await user.get();
 user.data.name = 'John';  // Change tracked via Proxy
 await user.save();        // Only saves 'name' field (dirty tracking)
+
+// Example 1: Auto-generate random IDs and timestamps using getters
+class Post extends FirestoreDocument<PostKey, PostData> {
+  protected static pathTemplate = 'posts/{postId}';
+
+  protected static get defaultKey(): PostKey {
+    return { postId: newId() };  // New ID generated each time
+  }
+
+  protected static get defaultData(): PostData {
+    return {
+      title: '',
+      content: '',
+      createdAt: new Date(),  // Fresh timestamp each time
+    };
+  }
+}
+
+const post = new Post();  // Auto-generates new postId
+post.data.title = 'New Post';
+await post.save();
+
+// Example 2: Singleton pattern with fixed defaultKey
+class AppConfig extends FirestoreDocument<AppConfigKey, AppConfigData> {
+  protected static pathTemplate = 'config/{configId}';
+
+  protected static get defaultKey(): AppConfigKey {
+    return { configId: 'app-settings' };  // Always same document
+  }
+
+  protected static get defaultData(): AppConfigData {
+    return {
+      theme: 'light',
+      language: 'en',
+    };
+  }
+}
+
+const config = new AppConfig();  // Always references 'app-settings'
+await config.get();
 ```
 
 **Key Properties:**
@@ -314,10 +360,11 @@ When working with this codebase:
 1. **File structure**: `admin/` and `web/` have parallel implementations
 2. **Type safety**: Always use proper generics `<Key, Data, Document>`
 3. **Path templates**: Use `{field}` syntax, not `:field` or other formats
-4. **defaultData**: Required static property on all Document classes
-5. **Collection constructor**: First param is Document class, second is key array
-6. **Batch limit**: Firestore has 500-document batch limit (handled automatically)
-7. **instanceof issue**: When testing locally with `file:../..` dependencies, `instanceof DocumentReference` may fail due to module duplication. Use duct typing or ensure proper module resolution.
+4. **defaultData**: Required static getter on all Document classes - use getter for dynamic values like `new Date()`
+5. **defaultKey**: Optional static getter for auto-initialization when no key is provided to constructor - use getter for dynamic IDs like `newId()` or `timeId()`
+6. **Collection constructor**: First param is Document class, second is key array
+7. **Batch limit**: Firestore has 500-document batch limit (handled automatically)
+8. **instanceof issue**: When testing locally with `file:../..` dependencies, `instanceof DocumentReference` may fail due to module duplication. Use duct typing or ensure proper module resolution.
 
 ## References
 

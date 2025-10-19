@@ -91,6 +91,7 @@ export class FirestoreCollection<
       exist?: boolean,
     ): Document;
     defaultData: FirestoreData;
+    defaultKey?: FirestoreKey | string[];
   };
   protected _key?: Key | string[];
   protected _condition: Condition | undefined;
@@ -122,7 +123,11 @@ export class FirestoreCollection<
     this.unwatch();
   }
 
-  constructor(ctor: { new (): Document; defaultData: FirestoreData }, key?: Key | string[], condition?: Condition) {
+  constructor(
+    ctor: { new (): Document; defaultData: FirestoreData; defaultKey?: FirestoreKey | string[] },
+    key?: Key | string[],
+    condition?: Condition,
+  ) {
     this._ctor = ctor;
     this.key = key;
     this.condition = condition;

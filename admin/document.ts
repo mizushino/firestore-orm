@@ -36,10 +36,20 @@ export class FirestoreDocument<Key extends FirestoreKey = FirestoreKey, Data ext
   protected static pathTemplate = '';
 
   /**
+   * Default key for new documents
+   * Override in subclasses to provide custom default key (e.g., using newId() or timeId())
+   * Use getter to generate new IDs on each access
+   */
+  protected static get defaultKey(): FirestoreKey | string[] | undefined {
+    return undefined;
+  }
+
+  /**
    * Default data for new documents
    * Override in subclasses to provide custom default values
+   * Use getter to generate fresh default values on each access (e.g., new Date())
    */
-  protected get defaultData(): FirestoreData {
+  protected static get defaultData(): FirestoreData {
     return {};
   }
 
@@ -135,13 +145,15 @@ export class FirestoreDocument<Key extends FirestoreKey = FirestoreKey, Data ext
 
   constructor(keyOrRef?: Key | string | DocumentReference, data: Data | DocumentSnapshot | null = null, exist = false) {
     if (data === null) {
-      data = this.defaultData as Data;
+      data = this.static.defaultData as Data;
     }
 
     if (keyOrRef instanceof DocumentReference) {
       this.setReference(keyOrRef);
     } else if (keyOrRef !== undefined) {
       this.setKey(keyOrRef);
+    } else if (this.static.defaultKey !== undefined) {
+      this.setKey(this.static.defaultKey as Key);
     }
 
     this._exist = exist;
@@ -587,7 +599,7 @@ export class FirestoreDocument<Key extends FirestoreKey = FirestoreKey, Data ext
     this._exist = snapshot.exists;
 
     if (!this._exist) {
-      this.setData(this.defaultData as Data);
+      this.setData(this.static.defaultData as Data);
       return;
     }
 

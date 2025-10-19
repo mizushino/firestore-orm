@@ -54,11 +54,13 @@ interface UserData {
 class User extends FirestoreDocument<UserKey, UserData> {
   protected static pathTemplate = 'users/{uid}';
 
-  static defaultData: UserData = {
-    name: '',
-    email: '',
-    age: 0,
-  };
+  protected static get defaultData(): UserData {
+    return {
+      name: '',
+      email: '',
+      age: 0,
+    };
+  }
 }
 
 // Use it
@@ -80,6 +82,57 @@ import { FirestoreDocument } from '@mizushino/firestore-orm/web';
 ```
 
 Both have the same API - just choose the import based on your environment!
+
+### Auto-Generated Keys and Default Data
+
+Use static getters for `defaultKey` and `defaultData` to generate dynamic values:
+
+```typescript
+import { newId, timeId } from '@mizushino/firestore-orm/shared/utils';
+
+// Auto-generate IDs for each new instance
+class Post extends FirestoreDocument<PostKey, PostData> {
+  protected static pathTemplate = 'posts/{postId}';
+
+  // Auto-generate unique ID for each new instance
+  protected static get defaultKey(): PostKey {
+    return { postId: newId() };  // or use timeId() for sortable IDs
+  }
+
+  // Fresh default data with current timestamp
+  protected static get defaultData(): PostData {
+    return {
+      title: '',
+      content: '',
+      createdAt: new Date(),  // Fresh timestamp each time
+    };
+  }
+}
+
+// No need to specify key - auto-generated
+const post = new Post();
+post.data.title = 'My Post';
+await post.save();  // Saved with auto-generated ID
+
+// Singleton pattern - always same document
+class AppConfig extends FirestoreDocument<ConfigKey, ConfigData> {
+  protected static pathTemplate = 'config/{configId}';
+
+  protected static get defaultKey(): ConfigKey {
+    return { configId: 'app-settings' };  // Always references the same document
+  }
+
+  protected static get defaultData(): ConfigData {
+    return {
+      theme: 'light',
+      language: 'en',
+    };
+  }
+}
+
+const config = new AppConfig();  // Always references 'app-settings'
+await config.get();
+```
 
 ## Core Concepts
 
