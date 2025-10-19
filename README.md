@@ -60,6 +60,12 @@ interface UserData {
 // Create Document class with path template
 class User extends FirestoreDocument<UserKey, UserData> {
   protected static pathTemplate = 'users/{uid}';
+
+  static defaultData: UserData = {
+    name: '',
+    email: '',
+    age: 0,
+  };
 }
 
 // Usage
@@ -93,6 +99,12 @@ interface UserData {
 
 class User extends FirestoreDocument<UserKey, UserData> {
   protected static pathTemplate = 'users/{uid}';
+
+  static defaultData: UserData = {
+    name: '',
+    email: '',
+    age: 0,
+  };
 }
 
 const user = new User({ uid: 'user123' });
@@ -304,30 +316,33 @@ class User extends FirestoreDocument<UserKey, UserData> {
 #### Constructor
 
 ```typescript
-constructor(reference?, condition?)
+constructor(ctor, key?, condition?)
 ```
 
-- `reference`: Firestore CollectionReference or Query (optional)
+- `ctor`: Document class constructor (must extend FirestoreDocument)
+- `key`: Collection key as string array (e.g., `['users']` for top-level collection, or `['users', 'user123', 'posts']` for subcollection) (optional)
 - `condition`: Query conditions (optional)
 
 #### Properties
 
 - `documents: Map<string, Document>` - Map of document ID to Document instance
-- `reference: CollectionReference | Query` - Firestore reference
+- `reference: CollectionReference` - Firestore collection reference
+- `key: Key | string[]` - Collection key
+- `condition: Condition` - Query condition
+- `isLoaded: boolean` - Whether documents have been loaded
 
 #### Static Properties
 
-- `DocumentClass: typeof FirestoreDocument` - Document class to use
-- `path: string` - Collection path (e.g., 'users')
+- `pathTemplate: string` - Path template for building collection paths (e.g., 'users/{userId}/posts')
 
 #### Methods
 
-##### `get(): Promise<void>`
+##### `get(cache?): Promise<this>`
 
 Load documents matching query.
 
 ```typescript
-const users = new UserCollection(undefined, {
+const users = new FirestoreCollection(User, ['users'], {
   where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
   limit: 10
 });
@@ -336,97 +351,150 @@ await users.get();
 for (const [id, user] of users.documents) {
   console.log(id, user.data);
 }
+
+// Use cache to skip loading if already loaded
+await users.get(true);
 ```
 
-##### `add(data): Promise<string>`
+##### `add(data?, transaction?): Promise<Document | undefined>`
 
 Create document with auto-generated ID.
 
 ```typescript
-const id = await users.add({
+const user = await users.add({
   name: 'John',
   age: 30,
   email: 'john@example.com'
 });
+console.log('Created user:', user?.id);
 ```
 
-##### `set(key, data): Promise<void>`
+##### `set(id, data, transaction?): Promise<Document | undefined>`
 
 Create/update document with specific ID.
 
 ```typescript
-await users.set({ id: 'user123' }, {
+const user = await users.set('user123', {
   name: 'Jane',
   age: 25,
   email: 'jane@example.com'
 });
 ```
 
-##### `delete(key): Promise<void>`
+##### `delete(id, transaction?): Promise<void>`
 
-Delete document by key.
-
-```typescript
-await users.delete({ id: 'user123' });
-```
-
-##### `batchAdd(dataArray): Promise<void>`
-
-Batch create multiple documents. Automatically chunks into 500-document batches.
+Delete document by ID.
 
 ```typescript
-const newUsers = Array.from({ length: 1000 }, (_, i) => ({
-  name: `User ${i}`,
-  age: 20 + i,
-  email: `user${i}@example.com`
-}));
-
-await users.batchAdd(newUsers);  // Creates 1000 users in 2 batches
+await users.delete('user123');
 ```
 
-##### `batchSet(dataArray): Promise<void>`
+##### `save(transaction?): Promise<void>`
 
-Batch set multiple documents with specific IDs.
+Save all dirty documents in the collection.
 
 ```typescript
-await users.batchSet([
-  { key: { id: 'user1' }, data: { name: 'User 1', age: 20, email: 'user1@example.com' } },
-  { key: { id: 'user2' }, data: { name: 'User 2', age: 21, email: 'user2@example.com' } }
-]);
+// Make changes to multiple documents
+users.documents.get('user1')!.data.age = 30;
+users.documents.get('user2')!.data.age = 25;
+
+// Save all changes
+await users.save();
 ```
 
-##### `batchDelete(keys): Promise<void>`
+##### `first(): Document | undefined`
 
-Batch delete multiple documents.
+Get the first document in the collection.
 
 ```typescript
-await users.batchDelete([
-  { id: 'user1' },
-  { id: 'user2' },
-  { id: 'user3' }
-]);
+const firstUser = users.first();
 ```
 
-##### `watch(callback?): () => void`
+##### `find(id): Document | undefined`
+
+Find a document by ID from loaded documents (cache only, doesn't query Firestore).
+
+```typescript
+const user = users.find('user123');
+```
+
+##### `toArray(): Document[]`
+
+Convert documents map to array.
+
+```typescript
+const userArray = users.toArray();
+```
+
+##### `docs(force?): Promise<Document[]>`
+
+Get all documents as an array, loading if necessary.
+
+```typescript
+const userArray = await users.docs();
+const freshUserArray = await users.docs(true); // Force reload
+```
+
+##### `watch(callback): void`
 
 Watch collection for real-time updates.
 
 ```typescript
-users.watch(() => {
+users.watch((snapshot) => {
   console.log(`Collection has ${users.documents.size} documents`);
+  console.log('Changes:', snapshot.docChanges());
 });
 ```
 
-##### `snapshot<T>(): AsyncGenerator<T>`
+##### `unwatch(): void`
 
-Async generator for collection snapshots.
+Cancel all active snapshot listeners.
 
 ```typescript
-for await (const snapshot of users.snapshot()) {
-  for (const change of snapshot.docChanges()) {
-    console.log(change.type, change.doc.data());
+users.unwatch();
+```
+
+##### `snapshot(): AsyncGenerator<Document[]>`
+
+Async generator for real-time collection updates.
+
+```typescript
+for await (const documents of users.snapshot()) {
+  console.log('Documents updated:', documents.length);
+  for (const doc of documents) {
+    console.log(doc.data);
   }
 }
+```
+
+### Batch Operations
+
+Batch operations are provided as standalone functions that handle Firestore's 500-document batch limit automatically.
+
+```typescript
+import { batchSave, batchDelete } from 'firestore-orm/admin';
+```
+
+#### `batchSave(documents): Promise<void>`
+
+Save multiple documents in batches.
+
+```typescript
+const documents = [user1, user2, user3, /* ... up to 1000s ... */];
+
+// Automatically chunks into batches of 500
+await batchSave(documents);
+```
+
+#### `batchDelete(documents): Promise<void>`
+
+Delete multiple documents in batches.
+
+```typescript
+const documentsToDelete = Array.from(users.documents.values());
+
+// Automatically chunks into batches of 500
+await batchDelete(documentsToDelete);
 ```
 
 ### Query Conditions
