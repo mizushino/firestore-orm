@@ -35,7 +35,7 @@ export class FirestoreCollection<
    * Path template for building collection paths (e.g., "users/{userId}/posts")
    * Override in subclasses to define the collection path structure
    */
-  protected static pathTemplate = '';
+  public static pathTemplate = '';
 
   /**
    * Collection key used to identify this collection

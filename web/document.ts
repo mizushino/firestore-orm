@@ -40,14 +40,14 @@ export class FirestoreDocument<Key extends FirestoreKey = FirestoreKey, Data ext
    * Path template for building document paths (e.g., "users/{userId}/posts/{postId}")
    * Override in subclasses to define the document path structure
    */
-  protected static pathTemplate = '';
+  public static pathTemplate = '';
 
   /**
    * Default key for new documents
    * Override in subclasses to provide custom default key (e.g., using newId() or timeId())
    * Use getter to generate new IDs on each access
    */
-  protected static get defaultKey(): FirestoreKey | string[] | undefined {
+  public static get defaultKey(): FirestoreKey | string[] | undefined {
     return undefined;
   }
 
@@ -56,7 +56,7 @@ export class FirestoreDocument<Key extends FirestoreKey = FirestoreKey, Data ext
    * Override in subclasses to provide custom default values
    * Use getter to generate fresh default values on each access (e.g., new Date())
    */
-  protected static get defaultData(): FirestoreData {
+  public static get defaultData(): FirestoreData {
     return {};
   }
 
