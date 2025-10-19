@@ -1,0 +1,60 @@
+# Source files
+*.ts
+!*.d.ts
+tsconfig.json
+
+# Tests
+test/
+test-admin.ts
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Documentation (keep README.md)
+CLAUDE.md
+
+# CI/CD
+.github/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules/
+
+# Build tools
+.eslintrc*
+.prettierrc*
+eslint.config.*
+
+# Firebase
+.firebase/
+.firebaserc
+firebase.json
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Environment
+.env
+.env.*
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
