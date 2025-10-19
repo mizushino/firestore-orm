@@ -1,5 +1,5 @@
 {
-  "name": "firestore-orm",
+  "name": "@mizushino/firestore-orm",
   "version": "0.0.1",
   "description": "TypeScript-first ORM library for Firestore with support for both client-side (web) and server-side (admin) environments",
   "type": "module",
@@ -47,7 +47,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mizushino/firestore-orm.git"
+    "url": "git+https://github.com/mizushino/firestore-orm.git"
   },
   "bugs": {
     "url": "https://github.com/mizushino/firestore-orm/issues"

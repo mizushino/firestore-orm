@@ -1,52 +1,45 @@
 # Firestore ORM
 
+[![npm version](https://badge.fury.io/js/@mizushino%2Ffirestore-orm.svg)](https://www.npmjs.com/package/@mizushino/firestore-orm)
+[![npm downloads](https://img.shields.io/npm/dm/@mizushino/firestore-orm.svg)](https://www.npmjs.com/package/@mizushino/firestore-orm)
+![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
+![Tree Shakeable](https://img.shields.io/badge/Tree%20Shakeable-Yes-brightgreen)
+
 TypeScript-first ORM library for Firestore with support for both client-side (web) and server-side (admin) environments.
 
-## Features
-
-- **ActiveRecord Pattern**: Document-based ORM with change tracking via Proxy
-- **Repository Pattern**: Collection-based queries with powerful filtering
-- **Dual SDK Support**: Works with both `firebase` (web) and `firebase-admin` (server)
-- **Type Safe**: Full TypeScript support with generics
-- **Automatic Change Tracking**: Proxy-based dirty checking - only modified fields are saved
-- **Real-time Updates**: Built-in snapshot listeners with async generators
-- **Batch Operations**: Efficient bulk operations with automatic 500-document chunking
-- **Transaction Support**: First-class transaction and WriteBatch support
-- **Path Templates**: Flexible document path configuration with placeholders
+**✨ Key Features:**
+- **ActiveRecord & Repository patterns** - Intuitive document and collection management
+- **Automatic change tracking** - Only modified fields are saved via Proxy
+- **Works everywhere** - Both `firebase` (web) and `firebase-admin` (server) SDKs
+- **Real-time updates** - Built-in snapshot listeners with async generators
+- **Type-safe** - Full TypeScript support with generics and inference
+- **Path templates** - Flexible document path configuration with placeholders
 
 ## Installation
 
 ```bash
-npm install firestore-orm
+npm install @mizushino/firestore-orm
 ```
 
-### For Web/Client Projects
-
+**For Web/Client Projects:**
 ```bash
-npm install firestore-orm firebase
+npm install @mizushino/firestore-orm firebase
 ```
 
-### For Server/Functions Projects
-
+**For Server/Functions Projects:**
 ```bash
-npm install firestore-orm firebase-admin
+npm install @mizushino/firestore-orm firebase-admin
 ```
 
-## Quick Start
+## Usage
 
-### Web (Client-Side)
+### Basic Example
 
 ```typescript
-import { FirestoreDocument, FirestoreCollection } from 'firestore-orm/web';
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { FirestoreDocument } from '@mizushino/firestore-orm/admin';
+import { FirestoreKey } from '@mizushino/firestore-orm/admin';
 
-// Initialize Firebase
-initializeApp({ /* config */ });
-
-// Define your key and data interfaces
-import { FirestoreKey } from 'firestore-orm/web';
-
+// Define your document structure
 interface UserKey extends FirestoreKey {
   uid: string;
 }
@@ -57,7 +50,7 @@ interface UserData {
   age: number;
 }
 
-// Create Document class with path template
+// Create a Document class
 class User extends FirestoreDocument<UserKey, UserData> {
   protected static pathTemplate = 'users/{uid}';
 
@@ -68,50 +61,25 @@ class User extends FirestoreDocument<UserKey, UserData> {
   };
 }
 
-// Usage
-const user = new User({ uid: 'user123' });
-await user.get();  // Load from Firestore
-
-user.data.name = 'John Doe';  // Changes tracked automatically
-await user.save();  // Only saves 'name' field
-```
-
-### Admin (Server-Side)
-
-```typescript
-import { FirestoreDocument } from 'firestore-orm/admin';
-import { initializeApp } from 'firebase-admin/app';
-
-initializeApp();
-
-// Same interfaces as web
-import { FirestoreKey } from 'firestore-orm/admin';
-
-interface UserKey extends FirestoreKey {
-  uid: string;
-}
-
-interface UserData {
-  name: string;
-  email: string;
-  age: number;
-}
-
-class User extends FirestoreDocument<UserKey, UserData> {
-  protected static pathTemplate = 'users/{uid}';
-
-  static defaultData: UserData = {
-    name: '',
-    email: '',
-    age: 0,
-  };
-}
-
+// Use it
 const user = new User({ uid: 'user123' });
 await user.get();
-user.data.email = 'newemail@example.com';
-await user.save();  // Only updates 'email' field
+
+user.data.name = 'John Doe';  // Automatically tracked
+await user.save();              // Only saves changed fields
 ```
+
+### Web vs Admin SDK
+
+```typescript
+// Admin SDK (Firebase Functions, Node.js)
+import { FirestoreDocument } from '@mizushino/firestore-orm/admin';
+
+// Web SDK (Browser, Client-side)
+import { FirestoreDocument } from '@mizushino/firestore-orm/web';
+```
+
+Both have the same API - just choose the import based on your environment!
 
 ## Core Concepts
 
