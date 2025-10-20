@@ -10,6 +10,8 @@ TypeScript-first ORM library for Firestore with support for both client-side (we
 **✨ Key Features:**
 - **ActiveRecord & Repository patterns** - Intuitive document and collection management
 - **Automatic change tracking** - Only modified fields are saved via Proxy
+- **Auto-generated IDs** - Optional automatic ID generation with `defaultKey`
+- **Lifecycle hooks** - Built-in validation and timestamp management with `beforeSave`/`afterSave`
 - **Works everywhere** - Both `firebase` (web) and `firebase-admin` (server) SDKs
 - **Real-time updates** - Built-in snapshot listeners with async generators
 - **Type-safe** - Full TypeScript support with generics and inference
@@ -33,42 +35,128 @@ npm install @mizushino/firestore-orm firebase-admin
 
 ## Usage
 
-### Basic Example
+### Quick Start
 
 ```typescript
-import { FirestoreDocument } from '@mizushino/firestore-orm/admin';
-import { FirestoreKey } from '@mizushino/firestore-orm/admin';
+import { FirestoreDocument, FirestoreCollection, initializeFirestore } from '@mizushino/firestore-orm/admin';
+import type { FirestoreKey, FirestoreData } from '@mizushino/firestore-orm/admin';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { newId } from '@mizushino/firestore-orm/shared/utils';
 
-// Define your document structure
+// Initialize Firebase Admin
+const app = initializeApp({ projectId: 'your-project-id' });
+const db = getFirestore(app);
+initializeFirestore(db);
+
+// Define your types
 interface UserKey extends FirestoreKey {
   uid: string;
 }
 
-interface UserData {
+interface UserData extends FirestoreData {
   name: string;
   email: string;
   age: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Create a Document class
-class User extends FirestoreDocument<UserKey, UserData> {
-  protected static pathTemplate = 'users/{uid}';
+// Create a Document class with auto-generated IDs
+class UserDocument extends FirestoreDocument<UserKey, UserData> {
+  public static pathTemplate = 'users/{uid}';
 
-  protected static get defaultData(): UserData {
+  // Auto-generate ID for each new instance
+  public static get defaultKey(): UserKey {
+    return { uid: newId() };
+  }
+
+  public static get defaultData(): UserData {
     return {
       name: '',
       email: '',
       age: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
+  }
+
+  // Validation and auto-update timestamps
+  protected override beforeSave(): void {
+    // Update timestamp on every save
+    this.data.updatedAt = new Date();
+
+    // Validation
+    if (!this.data.name || this.data.name.trim() === '') {
+      throw new Error('Name is required');
+    }
+    if (!this.data.email || !this.data.email.includes('@')) {
+      throw new Error('Valid email is required');
+    }
+    if (this.data.age < 0) {
+      throw new Error('Age must be non-negative');
+    }
   }
 }
 
-// Use it
-const user = new User({ uid: 'user123' });
-await user.get();
+// Create a Collection class
+class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+  public static pathTemplate = 'users';
+  public static documentClass = UserDocument;
+}
 
-user.data.name = 'John Doe';  // Automatically tracked
-await user.save();              // Only saves changed fields
+// Example 1: Create with auto-generated ID
+const newUser = new UserDocument();
+newUser.data.name = 'John Doe';
+newUser.data.email = 'john@example.com';
+newUser.data.age = 30;
+await newUser.save();
+console.log('Created:', newUser.id);  // Auto-generated ID
+
+// Example 2: Create with manual ID
+const specificUser = new UserDocument({ uid: 'user123' });
+specificUser.data.name = 'Jane Doe';
+specificUser.data.email = 'jane@example.com';
+specificUser.data.age = 25;
+await specificUser.save();
+
+// Example 3: Load and update
+const existingUser = new UserDocument({ uid: 'user123' });
+await existingUser.get();
+existingUser.data.age = 26;  // Automatically tracked
+await existingUser.save();    // Only saves 'age' field
+
+// Example 4: Query with Collection
+const users = new UserCollection(undefined, {
+  where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
+  orderBy: { fieldPath: 'age', directionStr: 'asc' },
+  limit: 10
+});
+await users.get();
+
+for (const [id, user] of users.documents) {
+  console.log(`${id}: ${user.data.name} (${user.data.age})`);
+}
+
+// Example 5: Add via Collection
+await users.add({
+  name: 'Alice',
+  email: 'alice@example.com',
+  age: 28,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+});
+
+// Example 6: Validation in action
+try {
+  const invalidUser = new UserDocument();
+  invalidUser.data.name = '';  // Invalid - empty name
+  invalidUser.data.email = 'invalid-email';  // Invalid - no @
+  invalidUser.data.age = -5;  // Invalid - negative age
+  await invalidUser.save();  // Throws error
+} catch (error) {
+  console.error('Validation failed:', error.message);
+}
 ```
 
 ### Complete Example with Validation
@@ -89,8 +177,8 @@ interface UserData extends FirestoreData {
   name: string;
   email: string;
   age: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Define Document class
@@ -149,15 +237,16 @@ existingUser.data.age = 31;
 await existingUser.save();  // Only 'age' and 'updatedAt' are saved
 
 // 4. Query users with Collection
-const users = new FirestoreCollection<UserKey, UserData, UserDocument>(
-  UserDocument,
-  ['users'],
-  {
-    where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
-    orderBy: { fieldPath: 'createdAt', directionStr: 'desc' },
-    limit: 10
-  }
-);
+class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+  protected static pathTemplate = 'users';
+  protected static documentClass = UserDocument;
+}
+
+const users = new UserCollection(undefined, {
+  where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
+  orderBy: { fieldPath: 'createdAt', directionStr: 'desc' },
+  limit: 10
+});
 
 await users.get();
 for (const [id, user] of users.documents) {
@@ -169,7 +258,8 @@ const addedUser = await users.add({
   name: 'Jane Doe',
   email: 'jane@example.com',
   age: 25,
-  createdAt: new Date()
+  createdAt: new Date(),
+  updatedAt: new Date()
 });
 console.log('Added user:', addedUser?.id);
 
@@ -184,15 +274,67 @@ unsubscribe();
 
 ### Web vs Admin SDK
 
-```typescript
-// Admin SDK (Firebase Functions, Node.js)
-import { FirestoreDocument } from '@mizushino/firestore-orm/admin';
+The library provides separate implementations for client-side (web) and server-side (admin) with the **same API**:
 
-// Web SDK (Browser, Client-side)
-import { FirestoreDocument } from '@mizushino/firestore-orm/web';
+```typescript
+// Admin SDK (Firebase Functions, Node.js, Cloud Functions)
+import {
+  FirestoreDocument,
+  FirestoreCollection,
+  initializeFirestore,
+  batchSave,
+  batchDelete
+} from '@mizushino/firestore-orm/admin';
+import { newId } from '@mizushino/firestore-orm/shared/utils';
+
+// Web SDK (Browser, React, Vue, etc.)
+import {
+  FirestoreDocument,
+  FirestoreCollection,
+  initializeFirestore,
+  batchSave,
+  batchDelete
+} from '@mizushino/firestore-orm/web';
+import { newId } from '@mizushino/firestore-orm/shared/utils';
 ```
 
-Both have the same API - just choose the import based on your environment!
+**Web SDK Setup:**
+```typescript
+import { initializeApp } from 'firebase/app';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { initializeFirestore } from '@mizushino/firestore-orm/web';
+
+const app = initializeApp({
+  apiKey: 'your-api-key',
+  projectId: 'your-project-id',
+  // ... other config
+});
+
+const db = getFirestore(app);
+
+// For development with emulator
+connectFirestoreEmulator(db, 'localhost', 8080);
+
+// Initialize ORM
+initializeFirestore(db);
+```
+
+**Admin SDK Setup:**
+```typescript
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeFirestore } from '@mizushino/firestore-orm/admin';
+
+const app = initializeApp();
+const db = getFirestore(app);
+
+// For development with emulator
+process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+db.settings({ host: 'localhost:8080', ssl: false });
+
+// Initialize ORM
+initializeFirestore(db);
+```
 
 ### Auto-Generated Keys and Default Data
 
@@ -448,12 +590,20 @@ class User extends FirestoreDocument<UserKey, UserData> {
 #### Constructor
 
 ```typescript
-constructor(ctor, key?, condition?)
+class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
+  protected static pathTemplate = 'users';  // or 'users/{userId}/posts'
+  protected static documentClass = User;
+}
+
+// Usage
+const users = new UserCollection();  // All documents
+const users = new UserCollection(undefined, condition);  // With query condition
+const userPosts = new UserCollection({ userId: 'user123' });  // For subcollections
 ```
 
-- `ctor`: Document class constructor (must extend FirestoreDocument)
-- `key`: Collection key as string array (e.g., `['users']` for top-level collection, or `['users', 'user123', 'posts']` for subcollection) (optional)
-- `condition`: Query conditions (optional)
+**Parameters:**
+- `key?: Key` - Collection key object for subcollections (optional)
+- `condition?: Condition` - Query conditions (optional)
 
 #### Properties
 
@@ -465,7 +615,8 @@ constructor(ctor, key?, condition?)
 
 #### Static Properties
 
-- `pathTemplate: string` - Path template for building collection paths (e.g., 'users/{userId}/posts')
+- `pathTemplate: string` - Path template for building collection paths (e.g., 'users' or 'users/{userId}/posts')
+- `documentClass: DocumentConstructor` - Document class constructor for creating document instances (required for inheritance pattern)
 
 #### Methods
 
@@ -474,7 +625,12 @@ constructor(ctor, key?, condition?)
 Load documents matching query.
 
 ```typescript
-const users = new FirestoreCollection(User, ['users'], {
+class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
+  protected static pathTemplate = 'users';
+  protected static documentClass = User;
+}
+
+const users = new UserCollection(undefined, {
   where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
   limit: 10
 });
@@ -800,7 +956,7 @@ npm run clean
 
 ### Running Tests
 
-This project includes test files for both web and admin implementations.
+This project includes comprehensive test files for both web and admin implementations.
 
 #### 1. Start Firestore Emulator
 
@@ -822,23 +978,97 @@ In another terminal, run the tests:
 # Run admin (firebase-admin) tests
 npm run test:admin
 
-# Run web (firebase) tests (coming soon)
-# npm run test:web
+# Run web (firebase) tests
+npm run test:web
+
+# Run both
+npm run test:admin && npm run test:web
 ```
 
 **Note**: Make sure the emulator is running before executing tests, otherwise you'll get connection errors.
 
+#### Test Coverage
+
+Both test files include the following test cases:
+
+1. **CRUD Operations**
+   - Creating documents with manual IDs
+   - Creating documents with auto-generated IDs
+   - Reading documents
+   - Updating documents (dirty tracking)
+   - Deleting documents
+
+2. **Collection Operations**
+   - Adding multiple documents
+   - Querying with conditions
+   - Filtering and ordering
+
+3. **Change Tracking**
+   - Verifying dirty state after load
+   - Verifying dirty state after changes
+   - Verifying dirty state after save
+
+4. **Real-time Updates**
+   - Watching document changes
+   - Receiving snapshot updates
+   - Unsubscribing from listeners
+
+5. **Collection Inheritance Pattern**
+   - Creating collections with keys
+   - Querying with conditions
+   - Direct usage without inheritance
+   - Using string paths
+   - Using string array keys
+
 #### Test Files
 
 Test files are located in the `test/` directory:
-- `test/admin/test.ts` - Admin SDK tests
-- `test/web/test.ts` - Web SDK tests
+- `test/admin/test.ts` - Admin SDK integration tests
+- `test/web/test.ts` - Web SDK integration tests
 - `test/firebase.json` - Emulator configuration
 
-You can also run test files directly:
+Example test output:
+```
+✓ Connected to Firestore Emulator at localhost:8080
 
-```bash
-npx tsx test-admin.ts
+=== Testing CRUD Operations ===
+Creating user with manual ID...
+✓ User created: {
+  name: 'John Doe',
+  email: 'john@example.com',
+  age: 30,
+  createdAt: 2025-10-20T15:00:54.953Z,
+  updatedAt: 2025-10-20T15:00:54.953Z,
+  _id: 'user123'
+}
+
+Creating user with auto-generated ID...
+✓ Auto user created: {
+  name: 'Auto User',
+  email: 'auto@example.com',
+  age: 25,
+  createdAt: 2025-10-20T15:00:54.961Z,
+  updatedAt: 2025-10-20T15:00:54.961Z,
+  _id: 'gYgYmMi9TVTFOXxrEvmM'
+}
+✓ Auto-generated uid: gYgYmMi9TVTFOXxrEvmM
+
+Updating user...
+✓ Verified: {
+  name: 'Jane Doe',
+  age: 31,
+  createdAt: 2025-10-20T15:00:54.953Z,
+  updatedAt: 2025-10-20T15:00:54.973Z,  // Updated timestamp!
+  _id: 'user123'
+}
+
+=== Testing Collection Operations ===
+✓ Found 3 users:
+  - Alice (25) [ZL6ql0Dn0td2suPDFeCl]
+  - Charlie (28) [dblOR1bUfFTPpTQrP1i2]
+  - Bob (35) [O1agEjATccrF072nYbfs]
+
+✅ All tests passed!
 ```
 
 ## Project Structure

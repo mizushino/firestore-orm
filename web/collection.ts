@@ -1,5 +1,3 @@
-import type { FirestoreDocument } from './document';
-
 import {
   collection,
   type CollectionReference,
@@ -16,6 +14,7 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 
+import { FirestoreDocument } from './document';
 import { firestore } from './firestore';
 import { buildQuery, type Condition } from './query';
 import { type FirestoreData, type FirestoreKey, FirestoreDocumentError } from './types';
@@ -36,6 +35,12 @@ export class FirestoreCollection<
    * Override in subclasses to define the collection path structure
    */
   public static pathTemplate = '';
+
+  /**
+   * Document class constructor for creating document instances
+   * Override in subclasses to define the document type
+   */
+  public static documentClass: typeof FirestoreDocument<FirestoreKey, FirestoreData> = FirestoreDocument;
 
   /**
    * Collection key used to identify this collection
@@ -123,14 +128,24 @@ export class FirestoreCollection<
     this.unwatch();
   }
 
-  constructor(
-    ctor: { new (): Document; readonly defaultData: FirestoreData; readonly defaultKey?: FirestoreKey | string[] },
-    key?: Key | string[],
-    condition?: Condition,
-  ) {
-    this._ctor = ctor;
-    this.key = key;
-    this.condition = condition;
+  constructor(key?: Key | string[] | string, condition?: Condition) {
+    this._ctor = this.static.documentClass as unknown as typeof this._ctor;
+
+    // If key is a simple string path, use it directly as collection path
+    if (typeof key === 'string') {
+      this.reference = collection(firestore(), key) as CollectionReference<Data>;
+      this._condition = condition;
+      this.initializeQuery();
+    } else if (key === undefined && this.static.pathTemplate) {
+      // If no key provided but pathTemplate exists, use pathTemplate directly
+      const path = this.static.pathTemplate;
+      this.reference = collection(firestore(), path) as CollectionReference<Data>;
+      this._condition = condition;
+      this.initializeQuery();
+    } else {
+      this.key = key as Key | string[] | undefined;
+      this.condition = condition;
+    }
   }
 
   /**

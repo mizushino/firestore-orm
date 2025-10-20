@@ -1,9 +1,15 @@
-import type { FirestoreData, FirestoreKey } from '../../admin/types.js';
-
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-import { FirestoreDocument, FirestoreCollection, initializeFirestore, batchDelete } from '../../admin/index.js';
+import {
+  type FirestoreKey,
+  type FirestoreData,
+  FirestoreDocument,
+  FirestoreCollection,
+  initializeFirestore,
+  batchDelete,
+  newId,
+} from '../../admin/index.js';
 
 // Initialize Firebase Admin with emulator
 const app = initializeApp({
@@ -26,49 +32,90 @@ console.log('✓ Connected to Firestore Emulator at localhost:8080');
 initializeFirestore(db);
 
 // Define your key and data types
-type UserKey = FirestoreKey & {
+interface UserKey extends FirestoreKey {
   uid: string;
-};
+}
 
 interface UserData extends FirestoreData {
   name: string;
   email: string;
   age: number;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 // Create Document class with path template
-class User extends FirestoreDocument<UserKey, UserData> {
-  protected static pathTemplate = 'test/{uid}';
+class UserDocument extends FirestoreDocument<UserKey, UserData> {
+  public static pathTemplate = 'test/{uid}';
 
-  protected static get defaultData(): UserData {
+  public static get defaultKey(): UserKey {
+    return { uid: newId() };
+  }
+
+  public static get defaultData(): UserData {
     return {
       name: '',
       email: '',
       age: 0,
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
   }
+
+  protected override beforeSave(): void {
+    // Update timestamp on every save
+    this.data.updatedAt = new Date();
+
+    // Validation
+    if (!this.data.name || this.data.name.trim() === '') {
+      throw new Error('Name is required');
+    }
+    if (!this.data.email || !this.data.email.includes('@')) {
+      throw new Error('Valid email is required');
+    }
+    if (this.data.age < 0) {
+      throw new Error('Age must be non-negative');
+    }
+  }
+}
+
+// Create Collection class with inheritance pattern
+class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+  public static pathTemplate = 'test';
+  public static documentClass = UserDocument;
 }
 
 // Test functions
 async function testCRUD(): Promise<void> {
   console.log('\n=== Testing CRUD Operations ===');
 
-  // Create
-  const user = new User({ uid: 'user123' });
+  // Create with manual ID
+  const user = new UserDocument({ uid: 'user123' });
   user.data.name = 'John Doe';
   user.data.email = 'john@example.com';
   user.data.age = 30;
   user.data.createdAt = new Date();
 
-  console.log('Creating user...');
+  console.log('Creating user with manual ID...');
   await user.save();
   console.log('✓ User created:', user.toObject());
 
+  // Create with auto-generated ID
+  const autoUser = new UserDocument();
+  autoUser.data.name = 'Auto User';
+  autoUser.data.email = 'auto@example.com';
+  autoUser.data.age = 25;
+  autoUser.data.createdAt = new Date();
+
+  console.log('\nCreating user with auto-generated ID...');
+  await autoUser.save();
+  console.log('✓ Auto user created:', autoUser.toObject());
+  const autoUserKey = autoUser.key as UserKey;
+  console.log(`✓ Auto-generated uid: ${autoUserKey.uid}`);
+
   // Read
   console.log('\nReading user...');
-  const userRead = new User({ uid: 'user123' });
+  const userRead = new UserDocument({ uid: 'user123' });
   await userRead.get();
   console.log('✓ User loaded:', userRead.toObject());
 
@@ -91,7 +138,7 @@ async function testCRUD(): Promise<void> {
   console.log('✓ User updated (only changed fields)');
 
   // Verify update
-  const userVerify = new User({ uid: 'user123' });
+  const userVerify = new UserDocument({ uid: 'user123' });
   await userVerify.get();
   console.log('✓ Verified:', userVerify.toObject());
 
@@ -109,7 +156,7 @@ async function testCRUD(): Promise<void> {
   console.log('✓ User deleted');
 
   // Verify deletion
-  const userDeleted = new User({ uid: 'user123' });
+  const userDeleted = new UserDocument({ uid: 'user123' });
   await userDeleted.get();
   console.log('✓ User exists:', userDeleted.exist);
 
@@ -118,13 +165,17 @@ async function testCRUD(): Promise<void> {
     throw new Error('User should not exist after deletion');
   }
 
-  console.log('✓ CRUD test completed (data preserved for inspection)');
+  // Clean up auto-generated user
+  await autoUser.delete();
+  console.log('✓ Auto user deleted');
+
+  console.log('✓ CRUD test completed');
 }
 
 async function testCollection(): Promise<void> {
   console.log('\n=== Testing Collection Operations ===');
 
-  const users = new FirestoreCollection<UserKey, UserData, User>(User, ['test']);
+  const users = new UserCollection();
 
   // Add multiple users
   console.log('Adding multiple users...');
@@ -133,6 +184,7 @@ async function testCollection(): Promise<void> {
     email: 'alice@example.com',
     age: 25,
     createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
   await users.add({
@@ -140,6 +192,7 @@ async function testCollection(): Promise<void> {
     email: 'bob@example.com',
     age: 35,
     createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
   await users.add({
@@ -147,13 +200,14 @@ async function testCollection(): Promise<void> {
     email: 'charlie@example.com',
     age: 28,
     createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
   console.log('✓ Added 3 users');
 
   // Query users
   console.log('\nQuerying users (age >= 25)...');
-  const queryUsers = new FirestoreCollection<UserKey, UserData, User>(User, ['test'], {
+  const queryUsers = new UserCollection(undefined, {
     where: [{ fieldPath: 'age', opStr: '>=', value: 25 }],
     orderBy: { fieldPath: 'age', directionStr: 'asc' },
   });
@@ -175,7 +229,7 @@ async function testCollection(): Promise<void> {
 async function testChangeTracking(): Promise<void> {
   console.log('\n=== Testing Change Tracking ===');
 
-  const user = new User({ uid: 'tracking-test' });
+  const user = new UserDocument({ uid: 'tracking-test' });
   user.data.name = 'Test User';
   user.data.email = 'test@example.com';
   user.data.age = 30;
@@ -185,7 +239,7 @@ async function testChangeTracking(): Promise<void> {
   console.log('✓ User created');
 
   // Load and check dirty state
-  const userLoad = new User({ uid: 'tracking-test' });
+  const userLoad = new UserDocument({ uid: 'tracking-test' });
   await userLoad.get();
   console.log('Is dirty after load:', userLoad.isDirty); // false
 
@@ -218,7 +272,7 @@ async function testChangeTracking(): Promise<void> {
 async function testRealtime(): Promise<void> {
   console.log('\n=== Testing Real-time Updates ===');
 
-  const user = new User({ uid: 'realtime-test' });
+  const user = new UserDocument({ uid: 'realtime-test' });
   user.data.name = 'Realtime User';
   user.data.email = 'realtime@example.com';
   user.data.age = 30;
@@ -229,7 +283,7 @@ async function testRealtime(): Promise<void> {
 
   // Watch for changes
   let updateCount = 0;
-  const unsubscribe = user.watch((data) => {
+  const unsubscribe = user.watch((data: UserData) => {
     updateCount++;
     console.log(`✓ Update ${updateCount} received:`, data.name);
   });
@@ -257,10 +311,79 @@ async function testRealtime(): Promise<void> {
   console.log('✓ Realtime test completed (data preserved for inspection)');
 }
 
+async function testCollectionInheritance(): Promise<void> {
+  console.log('\n=== Testing Collection Inheritance Pattern ===');
+
+  // Test 1: Create collection without key (all documents)
+  console.log('\nTest 1: Collection without key');
+  const allUsers = new UserCollection();
+
+  await allUsers.add({
+    name: 'Inheritance Test 1',
+    email: 'test1@example.com',
+    age: 20,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  await allUsers.add({
+    name: 'Inheritance Test 2',
+    email: 'test2@example.com',
+    age: 22,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  await allUsers.get();
+  console.log(`✓ Created ${allUsers.documents.size} users via inherited collection`);
+
+  // Test 2: Query with condition
+  console.log('\nTest 2: Collection with query condition');
+  const filteredUsers = new UserCollection(undefined, {
+    where: [{ fieldPath: 'age', opStr: '>=', value: 21 }],
+  });
+
+  await filteredUsers.get();
+  console.log(`✓ Found ${filteredUsers.documents.size} users with age >= 21`);
+  for (const [id, user] of filteredUsers.documents) {
+    console.log(`  - ${user.data.name} (age: ${user.data.age}) [${id}]`);
+  }
+
+  // Assert at least one user matches
+  if (filteredUsers.documents.size === 0) {
+    throw new Error('Expected at least one user with age >= 21');
+  }
+
+  // Test 3: Direct usage without inheritance (using default documentClass)
+  console.log('\nTest 3: Direct usage without inheritance');
+  class DirectCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+    // Only pathTemplate is defined, documentClass uses default FirestoreDocument
+    public static pathTemplate = 'test';
+  }
+
+  const directUsers = new DirectCollection();
+  await directUsers.get();
+  console.log(`✓ Direct usage with minimal inheritance works: Found ${directUsers.documents.size} users`);
+
+  // Test 4: No inheritance at all - using string path (simplest)
+  console.log('\nTest 4: No inheritance - using string path');
+  const noInheritanceUsers = new FirestoreCollection<UserKey, UserData, UserDocument>('test');
+  await noInheritanceUsers.get();
+  console.log(`✓ String path works: Found ${noInheritanceUsers.documents.size} users`);
+
+  // Test 5: No inheritance - using string[] for key (also supported)
+  console.log('\nTest 5: No inheritance - using string[] key');
+  const arrayKeyUsers = new FirestoreCollection<UserKey, UserData, UserDocument>(['test']);
+  await arrayKeyUsers.get();
+  console.log(`✓ String array key works: Found ${arrayKeyUsers.documents.size} users`);
+
+  console.log('\n✓ Collection inheritance test completed');
+}
+
 // Cleanup function to clear all test data before tests
 async function cleanupTestData(): Promise<void> {
   console.log('\n=== Cleaning up existing test data ===');
-  const users = new FirestoreCollection<UserKey, UserData, User>(User, ['test']);
+  const users = new UserCollection();
   await users.get();
 
   if (users.documents.size > 0) {
@@ -280,6 +403,7 @@ async function runTests(): Promise<void> {
     await testCollection();
     await testChangeTracking();
     await testRealtime();
+    await testCollectionInheritance();
 
     console.log('\n✅ All tests passed!');
     process.exit(0);

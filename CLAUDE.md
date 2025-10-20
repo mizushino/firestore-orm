@@ -51,6 +51,8 @@ firestore-orm/
 **Key Features:**
 - **CRUD Operations**: `get()`, `save()`, `set()`, `update()`, `delete()`
 - **Change Tracking**: Proxy-based automatic dirty detection
+- **Auto-generated IDs**: Optional automatic ID generation with `defaultKey`
+- **Lifecycle Hooks**: Built-in validation and timestamp management with `beforeSave`/`afterSave`
 - **Real-time Updates**: `watch()` and `snapshot()` for live data
 - **Serialization**: Automatic Date ↔ Timestamp conversion
 - **Transaction Support**: All methods support `Transaction` and `WriteBatch`
@@ -119,12 +121,24 @@ class AppConfig extends FirestoreDocument<AppConfigKey, AppConfigData> {
 const config = new AppConfig();  // Always references 'app-settings'
 await config.get();
 
-// Example 3: Complete example with validation
+// Example 3: Complete example with validation (from test/admin/test.ts)
+interface UserKey extends FirestoreKey {
+  uid: string;
+}
+
+interface UserData extends FirestoreData {
+  name: string;
+  email: string;
+  age: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 class UserDocument extends FirestoreDocument<UserKey, UserData> {
-  public static pathTemplate = 'users/{userId}';
+  public static pathTemplate = 'users/{uid}';
 
   public static get defaultKey(): UserKey {
-    return { userId: newId() };
+    return { uid: newId() };
   }
 
   public static get defaultData(): UserData {
@@ -133,17 +147,19 @@ class UserDocument extends FirestoreDocument<UserKey, UserData> {
       email: '',
       age: 0,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
   }
 
   protected override beforeSave(): void {
+    // Update timestamp on every save
     this.data.updatedAt = new Date();
 
-    if (!this.data.name?.trim()) {
+    // Validation
+    if (!this.data.name || this.data.name.trim() === '') {
       throw new Error('Name is required');
     }
-    if (!this.data.email?.includes('@')) {
+    if (!this.data.email || !this.data.email.includes('@')) {
       throw new Error('Valid email is required');
     }
     if (this.data.age < 0) {
@@ -159,13 +175,23 @@ user.data.email = 'john@example.com';
 user.data.age = 30;
 await user.save();
 
+// Collection class with inheritance pattern
+class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+  public static pathTemplate = 'users';
+  public static documentClass = UserDocument;
+}
+
 // Query users
-const users = new FirestoreCollection<UserKey, UserData, UserDocument>(
-  UserDocument,
-  ['users'],
-  { where: [{ fieldPath: 'age', opStr: '>=', value: 18 }] }
-);
+const users = new UserCollection(undefined, {
+  where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
+  orderBy: { fieldPath: 'age', directionStr: 'asc' },
+  limit: 10
+});
 await users.get();
+
+for (const [id, user] of users.documents) {
+  console.log(`${id}: ${user.data.name} (${user.data.age})`);
+}
 ```
 
 **Key Properties:**
@@ -207,21 +233,37 @@ await users.get();
 
 **Usage Example:**
 ```typescript
-const users = new FirestoreCollection<UserKey, UserData, User>(
-  User,           // Document class constructor
-  ['users'],      // Collection path as array
-  {               // Optional query conditions
-    where: [{ fieldPath: 'age', opStr: '>=', value: 20 }],
-    orderBy: { fieldPath: 'age', directionStr: 'asc' },
-    limit: 10
-  }
-);
+// Define Collection class
+class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
+  protected static pathTemplate = 'users';
+  protected static documentClass = User;
+}
+
+// Use the collection
+const users = new UserCollection(undefined, {
+  where: [{ fieldPath: 'age', opStr: '>=', value: 20 }],
+  orderBy: { fieldPath: 'age', directionStr: 'asc' },
+  limit: 10
+});
 
 await users.get();
 for (const [id, user] of users.documents) {
   console.log(user.data);
 }
+
+// For subcollections with keys
+class PostCollection extends FirestoreCollection<PostKey, PostData, Post> {
+  protected static pathTemplate = 'users/{userId}/posts';
+  protected static documentClass = Post;
+}
+
+const userPosts = new PostCollection({ userId: 'user123' });
+await userPosts.get();
 ```
+
+**Static Properties:**
+- `pathTemplate` - Path template for building collection paths (e.g., 'users' or 'users/{userId}/posts')
+- `documentClass` - Document class constructor (required for inheritance pattern)
 
 **Key Properties:**
 - `documents` - Map<string, Document> of loaded documents
@@ -384,7 +426,7 @@ npm run emulator
 2. **Run Tests** (in another terminal):
 ```bash
 npm run test:admin
-npm run test:web  # Coming soon
+npm run test:web
 ```
 
 ### Building
@@ -406,23 +448,30 @@ npm publish
 When working with this codebase:
 
 1. **File structure**: `admin/` and `web/` have parallel implementations
-2. **Type safety**: Always use proper generics `<Key, Data, Document>`
-3. **Path templates**: Use `{field}` syntax, not `:field` or other formats
-4. **defaultData**: Required static getter on all Document classes - use getter for dynamic values like `new Date()`
-5. **defaultKey**: Optional static getter for auto-initialization when no key is provided to constructor - use getter for dynamic IDs like `newId()` or `timeId()`
-6. **Collection constructor**: First param is Document class, second is key array
-7. **Batch limit**: Firestore has 500-document batch limit (handled automatically)
-8. **instanceof issue**: When testing locally with `file:../..` dependencies, `instanceof DocumentReference` may fail due to module duplication. Use duct typing or ensure proper module resolution.
+2. **Type safety**: Always use `interface` (not `type`) for Key and Data definitions - extends `FirestoreKey` and `FirestoreData`
+3. **Type generics**: Always use proper generics `<Key, Data, Document>`
+4. **Path templates**: Use `{field}` syntax, not `:field` or other formats
+5. **defaultData**: Required static getter on all Document classes - use getter for dynamic values like `new Date()`
+6. **defaultKey**: Optional static getter for auto-initialization when no key is provided to constructor - use getter for dynamic IDs like `newId()` or `timeId()`
+7. **Validation**: Implement `beforeSave()` hook for validation and auto-updating timestamps (like `updatedAt`)
+8. **Collection inheritance pattern**:
+   - Define `pathTemplate` and `documentClass` as `public static` properties in subclasses
+   - Constructor signature: `new UserCollection(key?, condition?)`
+9. **Batch limit**: Firestore has 500-document batch limit (handled automatically)
+10. **instanceof issue**: When testing locally with `file:../..` dependencies, `instanceof DocumentReference` may fail due to module duplication. Use duck typing or ensure proper module resolution.
 
 ## References
 
 ### Important Files
 
 - Core types: [shared/types.ts](shared/types.ts)
-- Utils: [shared/utils.ts](shared/utils.ts)
+- Utils: [shared/utils.ts](shared/utils.ts) - `newId()`, `timeId()`, `deepEqual()`, etc.
 - Admin Document: [admin/document.ts](admin/document.ts)
 - Admin Collection: [admin/collection.ts](admin/collection.ts)
-- Admin tests: [test/admin/test.ts](test/admin/test.ts)
+- Web Document: [web/document.ts](web/document.ts)
+- Web Collection: [web/collection.ts](web/collection.ts)
+- Admin tests: [test/admin/test.ts](test/admin/test.ts) - Full integration test examples
+- Web tests: [test/web/test.ts](test/web/test.ts) - Full integration test examples
 
 ### External Resources
 
