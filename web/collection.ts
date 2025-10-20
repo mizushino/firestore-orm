@@ -90,8 +90,8 @@ export class FirestoreCollection<
       data?: Data | QueryDocumentSnapshot<Data> | null,
       exist?: boolean,
     ): Document;
-    defaultData: FirestoreData;
-    defaultKey?: FirestoreKey | string[];
+    readonly defaultData: FirestoreData;
+    readonly defaultKey?: FirestoreKey | string[];
   };
   protected _key?: Key | string[];
   protected _condition: Condition | undefined;
@@ -124,7 +124,7 @@ export class FirestoreCollection<
   }
 
   constructor(
-    ctor: { new (): Document; defaultData: FirestoreData; defaultKey?: FirestoreKey | string[] },
+    ctor: { new (): Document; readonly defaultData: FirestoreData; readonly defaultKey?: FirestoreKey | string[] },
     key?: Key | string[],
     condition?: Condition,
   ) {
