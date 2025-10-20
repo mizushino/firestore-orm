@@ -118,6 +118,54 @@ class AppConfig extends FirestoreDocument<AppConfigKey, AppConfigData> {
 
 const config = new AppConfig();  // Always references 'app-settings'
 await config.get();
+
+// Example 3: Complete example with validation
+class UserDocument extends FirestoreDocument<UserKey, UserData> {
+  public static pathTemplate = 'users/{userId}';
+
+  public static get defaultKey(): UserKey {
+    return { userId: newId() };
+  }
+
+  public static get defaultData(): UserData {
+    return {
+      name: '',
+      email: '',
+      age: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  protected override beforeSave(): void {
+    this.data.updatedAt = new Date();
+
+    if (!this.data.name?.trim()) {
+      throw new Error('Name is required');
+    }
+    if (!this.data.email?.includes('@')) {
+      throw new Error('Valid email is required');
+    }
+    if (this.data.age < 0) {
+      throw new Error('Age must be non-negative');
+    }
+  }
+}
+
+// Create new user
+const user = new UserDocument();
+user.data.name = 'John Doe';
+user.data.email = 'john@example.com';
+user.data.age = 30;
+await user.save();
+
+// Query users
+const users = new FirestoreCollection<UserKey, UserData, UserDocument>(
+  UserDocument,
+  ['users'],
+  { where: [{ fieldPath: 'age', opStr: '>=', value: 18 }] }
+);
+await users.get();
 ```
 
 **Key Properties:**

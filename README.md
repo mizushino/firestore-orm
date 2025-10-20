@@ -71,6 +71,117 @@ user.data.name = 'John Doe';  // Automatically tracked
 await user.save();              // Only saves changed fields
 ```
 
+### Complete Example with Validation
+
+Here's a complete example showing best practices:
+
+```typescript
+import { FirestoreDocument, FirestoreCollection } from '@mizushino/firestore-orm/web';
+import type { FirestoreKey, FirestoreData } from '@mizushino/firestore-orm/web';
+import { newId } from '@mizushino/firestore-orm/shared/utils';
+
+// Define types
+interface UserKey extends FirestoreKey {
+  userId: string;
+}
+
+interface UserData extends FirestoreData {
+  name: string;
+  email: string;
+  age: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Define Document class
+class UserDocument extends FirestoreDocument<UserKey, UserData> {
+  public static pathTemplate = 'users/{userId}';
+
+  // Auto-generate IDs
+  public static get defaultKey(): UserKey {
+    return { userId: newId() };
+  }
+
+  // Default data with timestamps
+  public static get defaultData(): UserData {
+    return {
+      name: '',
+      email: '',
+      age: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  // Validation before save
+  protected override beforeSave(): void {
+    this.data.updatedAt = new Date();
+
+    if (!this.data.name || this.data.name.trim() === '') {
+      throw new Error('Name is required');
+    }
+    if (!this.data.email || !this.data.email.includes('@')) {
+      throw new Error('Valid email is required');
+    }
+    if (this.data.age < 0) {
+      throw new Error('Age must be non-negative');
+    }
+  }
+}
+
+// Usage examples
+
+// 1. Create new user (auto-generated ID)
+const newUser = new UserDocument();
+newUser.data.name = 'John Doe';
+newUser.data.email = 'john@example.com';
+newUser.data.age = 30;
+await newUser.save();
+console.log('Created user:', newUser.id);
+
+// 2. Load existing user
+const existingUser = new UserDocument({ userId: 'user123' });
+await existingUser.get();
+console.log('Loaded:', existingUser.data);
+
+// 3. Update user
+existingUser.data.age = 31;
+await existingUser.save();  // Only 'age' and 'updatedAt' are saved
+
+// 4. Query users with Collection
+const users = new FirestoreCollection<UserKey, UserData, UserDocument>(
+  UserDocument,
+  ['users'],
+  {
+    where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
+    orderBy: { fieldPath: 'createdAt', directionStr: 'desc' },
+    limit: 10
+  }
+);
+
+await users.get();
+for (const [id, user] of users.documents) {
+  console.log(`${id}: ${user.data.name} (${user.data.age})`);
+}
+
+// 5. Add user via Collection
+const addedUser = await users.add({
+  name: 'Jane Doe',
+  email: 'jane@example.com',
+  age: 25,
+  createdAt: new Date()
+});
+console.log('Added user:', addedUser?.id);
+
+// 6. Real-time updates
+const unsubscribe = existingUser.watch((data) => {
+  console.log('User updated:', data);
+});
+
+// Stop watching when done
+unsubscribe();
+```
+
 ### Web vs Admin SDK
 
 ```typescript
