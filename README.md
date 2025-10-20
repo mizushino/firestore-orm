@@ -38,11 +38,10 @@ npm install @mizushino/firestore-orm firebase-admin
 ### Quick Start
 
 ```typescript
-import { FirestoreDocument, FirestoreCollection, initializeFirestore } from '@mizushino/firestore-orm/admin';
+import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from '@mizushino/firestore-orm/admin';
 import type { FirestoreKey, FirestoreData } from '@mizushino/firestore-orm/admin';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { newId } from '@mizushino/firestore-orm/shared/utils';
 
 // Initialize Firebase Admin
 const app = initializeApp({ projectId: 'your-project-id' });
@@ -159,119 +158,6 @@ try {
 }
 ```
 
-### Complete Example with Validation
-
-Here's a complete example showing best practices:
-
-```typescript
-import { FirestoreDocument, FirestoreCollection } from '@mizushino/firestore-orm/web';
-import type { FirestoreKey, FirestoreData } from '@mizushino/firestore-orm/web';
-import { newId } from '@mizushino/firestore-orm/shared/utils';
-
-// Define types
-interface UserKey extends FirestoreKey {
-  userId: string;
-}
-
-interface UserData extends FirestoreData {
-  name: string;
-  email: string;
-  age: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Define Document class
-class UserDocument extends FirestoreDocument<UserKey, UserData> {
-  public static pathTemplate = 'users/{userId}';
-
-  // Auto-generate IDs
-  public static get defaultKey(): UserKey {
-    return { userId: newId() };
-  }
-
-  // Default data with timestamps
-  public static get defaultData(): UserData {
-    return {
-      name: '',
-      email: '',
-      age: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-  }
-
-  // Validation before save
-  protected override beforeSave(): void {
-    this.data.updatedAt = new Date();
-
-    if (!this.data.name || this.data.name.trim() === '') {
-      throw new Error('Name is required');
-    }
-    if (!this.data.email || !this.data.email.includes('@')) {
-      throw new Error('Valid email is required');
-    }
-    if (this.data.age < 0) {
-      throw new Error('Age must be non-negative');
-    }
-  }
-}
-
-// Usage examples
-
-// 1. Create new user (auto-generated ID)
-const newUser = new UserDocument();
-newUser.data.name = 'John Doe';
-newUser.data.email = 'john@example.com';
-newUser.data.age = 30;
-await newUser.save();
-console.log('Created user:', newUser.id);
-
-// 2. Load existing user
-const existingUser = new UserDocument({ userId: 'user123' });
-await existingUser.get();
-console.log('Loaded:', existingUser.data);
-
-// 3. Update user
-existingUser.data.age = 31;
-await existingUser.save();  // Only 'age' and 'updatedAt' are saved
-
-// 4. Query users with Collection
-class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
-  protected static pathTemplate = 'users';
-  protected static documentClass = UserDocument;
-}
-
-const users = new UserCollection(undefined, {
-  where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
-  orderBy: { fieldPath: 'createdAt', directionStr: 'desc' },
-  limit: 10
-});
-
-await users.get();
-for (const [id, user] of users.documents) {
-  console.log(`${id}: ${user.data.name} (${user.data.age})`);
-}
-
-// 5. Add user via Collection
-const addedUser = await users.add({
-  name: 'Jane Doe',
-  email: 'jane@example.com',
-  age: 25,
-  createdAt: new Date(),
-  updatedAt: new Date()
-});
-console.log('Added user:', addedUser?.id);
-
-// 6. Real-time updates
-const unsubscribe = existingUser.watch((data) => {
-  console.log('User updated:', data);
-});
-
-// Stop watching when done
-unsubscribe();
-```
-
 ### Web vs Admin SDK
 
 The library provides separate implementations for client-side (web) and server-side (admin) with the **same API**:
@@ -283,9 +169,9 @@ import {
   FirestoreCollection,
   initializeFirestore,
   batchSave,
-  batchDelete
+  batchDelete,
+  newId
 } from '@mizushino/firestore-orm/admin';
-import { newId } from '@mizushino/firestore-orm/shared/utils';
 
 // Web SDK (Browser, React, Vue, etc.)
 import {
@@ -293,9 +179,9 @@ import {
   FirestoreCollection,
   initializeFirestore,
   batchSave,
-  batchDelete
+  batchDelete,
+  newId
 } from '@mizushino/firestore-orm/web';
-import { newId } from '@mizushino/firestore-orm/shared/utils';
 ```
 
 **Web SDK Setup:**
@@ -341,7 +227,7 @@ initializeFirestore(db);
 Use static getters for `defaultKey` and `defaultData` to generate dynamic values:
 
 ```typescript
-import { newId, timeId } from '@mizushino/firestore-orm/shared/utils';
+import { FirestoreDocument } from '@mizushino/firestore-orm/admin';
 
 // Auto-generate IDs for each new instance
 class Post extends FirestoreDocument<PostKey, PostData> {
@@ -349,7 +235,7 @@ class Post extends FirestoreDocument<PostKey, PostData> {
 
   // Auto-generate unique ID for each new instance
   protected static get defaultKey(): PostKey {
-    return { postId: newId() };  // or use timeId() for sortable IDs
+    return { postId: timeId() };
   }
 
   // Fresh default data with current timestamp
@@ -394,14 +280,15 @@ await config.get();
 Define document paths using templates with placeholders:
 
 ```typescript
-import { FirestoreKey } from 'firestore-orm/web';
+import { FirestoreDocument } from '@mizushino/firestore-orm/web';
+import type { FirestoreKey, FirestoreData } from '@mizushino/firestore-orm/web';
 
 interface PostKey extends FirestoreKey {
   userId: string;
   postId: string;
 }
 
-interface PostData {
+interface PostData extends FirestoreData {
   title: string;
   content: string;
 }
@@ -544,13 +431,14 @@ const userData = user.toObject();
 Override these methods in subclasses:
 
 ```typescript
-import { FirestoreKey } from 'firestore-orm/web';
+import { FirestoreDocument } from '@mizushino/firestore-orm/web';
+import type { FirestoreKey, FirestoreData, FirestoreValue } from '@mizushino/firestore-orm/web';
 
 interface UserKey extends FirestoreKey {
   id: string;
 }
 
-interface UserData {
+interface UserData extends FirestoreData {
   name: string;
   email: string;
   age: number;
@@ -760,7 +648,7 @@ for await (const documents of users.snapshot()) {
 Batch operations are provided as standalone functions that handle Firestore's 500-document batch limit automatically.
 
 ```typescript
-import { batchSave, batchDelete } from 'firestore-orm/admin';
+import { batchSave, batchDelete } from '@mizushino/firestore-orm/admin';
 ```
 
 #### `batchSave(documents): Promise<void>`
@@ -812,7 +700,8 @@ interface Condition {
 ### Nested Collections
 
 ```typescript
-import { FirestoreKey } from 'firestore-orm/web';
+import { FirestoreDocument } from '@mizushino/firestore-orm/web';
+import type { FirestoreKey, FirestoreData } from '@mizushino/firestore-orm/web';
 
 interface CommentKey extends FirestoreKey {
   userId: string;
@@ -820,7 +709,7 @@ interface CommentKey extends FirestoreKey {
   commentId: string;
 }
 
-interface CommentData {
+interface CommentData extends FirestoreData {
   text: string;
   author: string;
   createdAt: Date;
@@ -861,13 +750,14 @@ await runTransaction(getFirestore(), async (transaction) => {
 ### Custom Validation
 
 ```typescript
-import { FirestoreKey } from 'firestore-orm/web';
+import { FirestoreDocument } from '@mizushino/firestore-orm/web';
+import type { FirestoreKey, FirestoreData } from '@mizushino/firestore-orm/web';
 
 interface UserKey extends FirestoreKey {
   id: string;
 }
 
-interface UserData {
+interface UserData extends FirestoreData {
   name: string;
   email: string;
   age: number;
@@ -911,7 +801,7 @@ function UserProfile({ userId }: { userId: string }) {
 
 ## Utility Functions
 
-The library also exports utility functions from `shared/`:
+The library also exports utility functions:
 
 ```typescript
 import {
@@ -921,7 +811,7 @@ import {
   newId,
   timeId,
   AsyncQueue
-} from 'firestore-orm/web';
+} from '@mizushino/firestore-orm/web';
 
 // Generate random ID
 const id = newId(20);  // 20-character random ID
