@@ -1,6 +1,6 @@
 # Firestore ORM
 
-[![npm version](https://badge.fury.io/js/@mizushino%2Ffirestore-orm.svg)](https://www.npmjs.com/package/@mzsn/firestore)
+[![npm version](https://badge.fury.io/js/@mzsn%2Ffirestore.svg)](https://www.npmjs.com/package/@mzsn/firestore)
 [![npm downloads](https://img.shields.io/npm/dm/@mzsn/firestore.svg)](https://www.npmjs.com/package/@mzsn/firestore)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
 ![Tree Shakeable](https://img.shields.io/badge/Tree%20Shakeable-Yes-brightgreen)
