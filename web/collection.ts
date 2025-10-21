@@ -128,24 +128,39 @@ export class FirestoreCollection<
     this.unwatch();
   }
 
-  constructor(key?: Key | string[] | string, condition?: Condition) {
+  constructor(keyOrCondition?: Key | string[] | string | Condition, condition?: Condition) {
     this._ctor = this.static.documentClass as unknown as typeof this._ctor;
 
-    // If key is a simple string path, use it directly as collection path
+    // Type guard: Check if first argument is a Condition (has required 'where' property)
+    const isCondition = (obj: unknown): obj is Condition => {
+      return obj !== null && typeof obj === 'object' && 'where' in obj && Array.isArray((obj as Condition).where);
+    };
+
+    // If first argument is a Condition, convert it to the standard pattern
+    if (keyOrCondition && isCondition(keyOrCondition)) {
+      condition = keyOrCondition;
+      keyOrCondition = undefined;
+    }
+
+    // Now handle as standard key + condition pattern
+    const key = keyOrCondition as Key | string[] | string | undefined;
+
     if (typeof key === 'string') {
+      // If key is a simple string path, use it directly as collection path
       this.reference = collection(firestore(), key) as CollectionReference<Data>;
-      this._condition = condition;
-      this.initializeQuery();
     } else if (key === undefined && this.static.pathTemplate) {
       // If no key provided but pathTemplate exists, use pathTemplate directly
-      const path = this.static.pathTemplate;
-      this.reference = collection(firestore(), path) as CollectionReference<Data>;
-      this._condition = condition;
-      this.initializeQuery();
+      this.reference = collection(firestore(), this.static.pathTemplate) as CollectionReference<Data>;
     } else {
+      // Standard key-based initialization
       this.key = key as Key | string[] | undefined;
       this.condition = condition;
+      return;
     }
+
+    // Set condition and initialize query for reference-based initialization
+    this._condition = condition;
+    this.initializeQuery();
   }
 
   /**

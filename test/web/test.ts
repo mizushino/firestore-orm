@@ -213,7 +213,7 @@ async function testCollection(): Promise<void> {
 
   // Query users
   console.log('\nQuerying users (age >= 25)...');
-  const queryUsers = new UserCollection(undefined, {
+  const queryUsers = new UserCollection({
     where: [['age', '>=', 25]],
     orderBy: ['age', 'asc'],
   });
@@ -345,7 +345,7 @@ async function testCollectionInheritance(): Promise<void> {
 
   // Test 2: Query with condition
   console.log('\nTest 2: Collection with query condition');
-  const filteredUsers = new UserCollection(undefined, {
+  const filteredUsers = new UserCollection({
     where: [['age', '>=', 21]],
   });
 

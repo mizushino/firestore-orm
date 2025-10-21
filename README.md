@@ -126,7 +126,7 @@ existingUser.data.age = 26;  // Automatically tracked
 await existingUser.save();    // Only saves 'age' field
 
 // Example 4: Query with Collection
-const users = new UserCollection(undefined, {
+const users = new UserCollection({
   where: [['age', '>=', 18]],
   orderBy: ['age', 'asc'],
   limit: 10
@@ -485,7 +485,7 @@ class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
 
 // Usage
 const users = new UserCollection();  // All documents
-const users = new UserCollection(undefined, condition);  // With query condition
+const users = new UserCollection(condition);  // With query condition
 const userPosts = new UserCollection({ userId: 'user123' });  // For subcollections
 ```
 
@@ -518,7 +518,7 @@ class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
   protected static documentClass = User;
 }
 
-const users = new UserCollection(undefined, {
+const users = new UserCollection({
   where: [['age', '>=', 18]],
   limit: 10
 });

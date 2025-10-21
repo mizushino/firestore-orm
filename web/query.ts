@@ -15,7 +15,7 @@ export type WhereClause = [fieldPath: string | FieldPath, opStr: WhereFilterOp, 
  * Query condition configuration
  *
  * Defines filtering, ordering, pagination and cursor options for Firestore queries.
- * All fields are optional.
+ * The `where` field is required to distinguish Condition from Key when used as first argument.
  *
  * @example
  * ```typescript
@@ -27,11 +27,18 @@ export type WhereClause = [fieldPath: string | FieldPath, opStr: WhereFilterOp, 
  *   orderBy: ['createdAt', 'desc'],
  *   limit: 10
  * };
+ *
+ * // Just orderBy or limit - use empty where array
+ * const condition2: Condition = {
+ *   where: [],
+ *   orderBy: ['createdAt', 'desc'],
+ *   limit: 10
+ * };
  * ```
  */
 export interface Condition {
-  /** Array of where clauses (all conditions are AND-ed together) */
-  where?: WhereClause[];
+  /** Array of where clauses (all conditions are AND-ed together). Required field. */
+  where: WhereClause[];
   /** Maximum number of documents to return */
   limit?: number;
   /** Maximum number of documents to return from the end of the result set */

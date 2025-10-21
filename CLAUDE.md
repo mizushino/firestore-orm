@@ -182,7 +182,7 @@ class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument
 }
 
 // Query users
-const users = new UserCollection(undefined, {
+const users = new UserCollection({
   where: [['age', '>=', 18]],
   orderBy: ['age', 'asc'],
   limit: 10
@@ -240,7 +240,7 @@ class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
 }
 
 // Use the collection
-const users = new UserCollection(undefined, {
+const users = new UserCollection({
   where: [['age', '>=', 20]],
   orderBy: ['age', 'asc'],
   limit: 10
