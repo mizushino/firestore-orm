@@ -676,16 +676,12 @@ await batchDelete(documentsToDelete);
 ### Query Conditions
 
 ```typescript
+// Where clause tuple: [fieldPath, operator, value]
+type WhereClause = [fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown];
+
 interface Condition {
-  where?: Array<{
-    fieldPath: string | FieldPath;
-    opStr: WhereFilterOp;  // '==', '!=', '<', '<=', '>', '>=', 'array-contains', 'in', etc.
-    value: unknown;
-  }>;
-  orderBy?: {
-    fieldPath: string | FieldPath;
-    directionStr?: 'asc' | 'desc';
-  };
+  where: WhereClause[];  // Required field
+  orderBy?: [fieldPath: string | FieldPath, directionStr?: 'asc' | 'desc'];
   limit?: number;
   limitToLast?: number;
   startAfter?: DocumentSnapshot;
@@ -693,6 +689,20 @@ interface Condition {
   endBefore?: DocumentSnapshot;
   endAt?: DocumentSnapshot;
 }
+
+// Example
+const condition: Condition = {
+  where: [['age', '>=', 18]],
+  orderBy: ['createdAt', 'desc'],
+  limit: 10
+};
+
+// Just orderBy/limit - use empty where array
+const condition2: Condition = {
+  where: [],
+  orderBy: ['name', 'asc'],
+  limit: 5
+};
 ```
 
 ## Advanced Examples
