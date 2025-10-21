@@ -9,7 +9,7 @@ import {
   initializeFirestore,
   batchDelete,
   newId,
-} from '../../web/index.js';
+} from '../../web';
 
 // Initialize Firebase with dummy config (emulator doesn't need real credentials)
 const app = initializeApp({

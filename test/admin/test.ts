@@ -9,7 +9,7 @@ import {
   initializeFirestore,
   batchDelete,
   newId,
-} from '../../admin/index.js';
+} from '../../admin';
 
 // Initialize Firebase Admin with emulator
 const app = initializeApp({
