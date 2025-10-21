@@ -38,8 +38,13 @@ npm install @mzsn/firestore firebase-admin
 ### Quick Start
 
 ```typescript
-import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from '@mzsn/firestore/admin';
-import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/admin';
+// Auto-detects environment (browser → web, node → admin)
+import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from '@mzsn/firestore';
+import type { FirestoreKey, FirestoreData } from '@mzsn/firestore';
+
+// Or explicitly specify (recommended for clarity)
+// import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from '@mzsn/firestore/admin';
+// import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/admin';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -160,28 +165,23 @@ try {
 
 ### Web vs Admin SDK
 
-The library provides separate implementations for client-side (web) and server-side (admin) with the **same API**:
+The library provides separate implementations for client-side (web) and server-side (admin) with the **same API**.
 
+**Option 1: Auto-detect (recommended)**
+```typescript
+// Automatically uses the right version based on your environment:
+// - Browser/Edge/Worker → web version
+// - Node.js → admin version
+import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore';
+```
+
+**Option 2: Explicit import (for clarity)**
 ```typescript
 // Admin SDK (Firebase Functions, Node.js, Cloud Functions)
-import {
-  FirestoreDocument,
-  FirestoreCollection,
-  initializeFirestore,
-  batchSave,
-  batchDelete,
-  newId
-} from '@mzsn/firestore/admin';
+import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore/admin';
 
 // Web SDK (Browser, React, Vue, etc.)
-import {
-  FirestoreDocument,
-  FirestoreCollection,
-  initializeFirestore,
-  batchSave,
-  batchDelete,
-  newId
-} from '@mzsn/firestore/web';
+import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore/web';
 ```
 
 **Web SDK Setup:**

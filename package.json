@@ -8,6 +8,14 @@
   "types": "./dist/admin/index.d.ts",
   "sideEffects": false,
   "exports": {
+    ".": {
+      "types": "./dist/admin/index.d.ts",
+      "edge-light": "./dist/web/index.js",
+      "worker": "./dist/web/index.js",
+      "browser": "./dist/web/index.js",
+      "node": "./dist/admin/index.js",
+      "default": "./dist/admin/index.js"
+    },
     "./web": {
       "types": "./dist/web/index.d.ts",
       "default": "./dist/web/index.js"
