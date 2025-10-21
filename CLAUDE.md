@@ -60,7 +60,7 @@ firestore-orm/
 
 **Usage Example:**
 ```typescript
-import { FirestoreDocument, FirestoreCollection, newId, timeId } from 'fire-orm/admin';
+import { FirestoreDocument, FirestoreCollection, newId, timeId } from '@mzsn/firestore/admin';
 
 class User extends FirestoreDocument<UserKey, UserData> {
   protected static pathTemplate = 'users/{uid}';

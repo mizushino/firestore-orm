@@ -1,7 +1,7 @@
 # Firestore ORM
 
-[![npm version](https://badge.fury.io/js/@mizushino%2Ffirestore-orm.svg)](https://www.npmjs.com/package/fire-orm)
-[![npm downloads](https://img.shields.io/npm/dm/fire-orm.svg)](https://www.npmjs.com/package/fire-orm)
+[![npm version](https://badge.fury.io/js/@mizushino%2Ffirestore-orm.svg)](https://www.npmjs.com/package/@mzsn/firestore)
+[![npm downloads](https://img.shields.io/npm/dm/@mzsn/firestore.svg)](https://www.npmjs.com/package/@mzsn/firestore)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
 ![Tree Shakeable](https://img.shields.io/badge/Tree%20Shakeable-Yes-brightgreen)
 
@@ -20,17 +20,17 @@ TypeScript-first ORM library for Firestore with support for both client-side (we
 ## Installation
 
 ```bash
-npm install fire-orm
+npm install @mzsn/firestore
 ```
 
 **For Web/Client Projects:**
 ```bash
-npm install fire-orm firebase
+npm install @mzsn/firestore firebase
 ```
 
 **For Server/Functions Projects:**
 ```bash
-npm install fire-orm firebase-admin
+npm install @mzsn/firestore firebase-admin
 ```
 
 ## Usage
@@ -38,8 +38,8 @@ npm install fire-orm firebase-admin
 ### Quick Start
 
 ```typescript
-import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from 'fire-orm/admin';
-import type { FirestoreKey, FirestoreData } from 'fire-orm/admin';
+import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from '@mzsn/firestore/admin';
+import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/admin';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -171,7 +171,7 @@ import {
   batchSave,
   batchDelete,
   newId
-} from 'fire-orm/admin';
+} from '@mzsn/firestore/admin';
 
 // Web SDK (Browser, React, Vue, etc.)
 import {
@@ -181,14 +181,14 @@ import {
   batchSave,
   batchDelete,
   newId
-} from 'fire-orm/web';
+} from '@mzsn/firestore/web';
 ```
 
 **Web SDK Setup:**
 ```typescript
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { initializeFirestore } from 'fire-orm/web';
+import { initializeFirestore } from '@mzsn/firestore/web';
 
 const app = initializeApp({
   apiKey: 'your-api-key',
@@ -209,7 +209,7 @@ initializeFirestore(db);
 ```typescript
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initializeFirestore } from 'fire-orm/admin';
+import { initializeFirestore } from '@mzsn/firestore/admin';
 
 const app = initializeApp();
 const db = getFirestore(app);
@@ -227,7 +227,7 @@ initializeFirestore(db);
 Use static getters for `defaultKey` and `defaultData` to generate dynamic values:
 
 ```typescript
-import { FirestoreDocument } from 'fire-orm/admin';
+import { FirestoreDocument } from '@mzsn/firestore/admin';
 
 // Auto-generate IDs for each new instance
 class Post extends FirestoreDocument<PostKey, PostData> {
@@ -280,8 +280,8 @@ await config.get();
 Define document paths using templates with placeholders:
 
 ```typescript
-import { FirestoreDocument } from 'fire-orm/web';
-import type { FirestoreKey, FirestoreData } from 'fire-orm/web';
+import { FirestoreDocument } from '@mzsn/firestore/web';
+import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/web';
 
 interface PostKey extends FirestoreKey {
   userId: string;
@@ -431,8 +431,8 @@ const userData = user.toObject();
 Override these methods in subclasses:
 
 ```typescript
-import { FirestoreDocument } from 'fire-orm/web';
-import type { FirestoreKey, FirestoreData, FirestoreValue } from 'fire-orm/web';
+import { FirestoreDocument } from '@mzsn/firestore/web';
+import type { FirestoreKey, FirestoreData, FirestoreValue } from '@mzsn/firestore/web';
 
 interface UserKey extends FirestoreKey {
   id: string;
@@ -648,7 +648,7 @@ for await (const documents of users.snapshot()) {
 Batch operations are provided as standalone functions that handle Firestore's 500-document batch limit automatically.
 
 ```typescript
-import { batchSave, batchDelete } from 'fire-orm/admin';
+import { batchSave, batchDelete } from '@mzsn/firestore/admin';
 ```
 
 #### `batchSave(documents): Promise<void>`
@@ -700,8 +700,8 @@ interface Condition {
 ### Nested Collections
 
 ```typescript
-import { FirestoreDocument } from 'fire-orm/web';
-import type { FirestoreKey, FirestoreData } from 'fire-orm/web';
+import { FirestoreDocument } from '@mzsn/firestore/web';
+import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/web';
 
 interface CommentKey extends FirestoreKey {
   userId: string;
@@ -750,8 +750,8 @@ await runTransaction(getFirestore(), async (transaction) => {
 ### Custom Validation
 
 ```typescript
-import { FirestoreDocument } from 'fire-orm/web';
-import type { FirestoreKey, FirestoreData } from 'fire-orm/web';
+import { FirestoreDocument } from '@mzsn/firestore/web';
+import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/web';
 
 interface UserKey extends FirestoreKey {
   id: string;
@@ -811,7 +811,7 @@ import {
   newId,
   timeId,
   AsyncQueue
-} from 'fire-orm/web';
+} from '@mzsn/firestore/web';
 
 // Generate random ID
 const id = newId(20);  // 20-character random ID
