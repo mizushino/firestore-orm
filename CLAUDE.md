@@ -183,8 +183,8 @@ class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument
 
 // Query users
 const users = new UserCollection(undefined, {
-  where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
-  orderBy: { fieldPath: 'age', directionStr: 'asc' },
+  where: [['age', '>=', 18]],
+  orderBy: ['age', 'asc'],
   limit: 10
 });
 await users.get();
@@ -241,8 +241,8 @@ class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
 
 // Use the collection
 const users = new UserCollection(undefined, {
-  where: [{ fieldPath: 'age', opStr: '>=', value: 20 }],
-  orderBy: { fieldPath: 'age', directionStr: 'asc' },
+  where: [['age', '>=', 20]],
+  orderBy: ['age', 'asc'],
   limit: 10
 });
 

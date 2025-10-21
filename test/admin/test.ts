@@ -208,8 +208,8 @@ async function testCollection(): Promise<void> {
   // Query users
   console.log('\nQuerying users (age >= 25)...');
   const queryUsers = new UserCollection(undefined, {
-    where: [{ fieldPath: 'age', opStr: '>=', value: 25 }],
-    orderBy: { fieldPath: 'age', directionStr: 'asc' },
+    where: [['age', '>=', 25]],
+    orderBy: ['age', 'asc'],
   });
 
   await queryUsers.get();
@@ -340,7 +340,7 @@ async function testCollectionInheritance(): Promise<void> {
   // Test 2: Query with condition
   console.log('\nTest 2: Collection with query condition');
   const filteredUsers = new UserCollection(undefined, {
-    where: [{ fieldPath: 'age', opStr: '>=', value: 21 }],
+    where: [['age', '>=', 21]],
   });
 
   await filteredUsers.get();

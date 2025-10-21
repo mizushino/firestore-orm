@@ -1,16 +1,13 @@
 import type { DocumentSnapshot, FieldPath, OrderByDirection, Query, WhereFilterOp } from 'firebase-admin/firestore';
 
 /**
- * Where clause for Firestore queries
+ * Where clause tuple format: [fieldPath, operator, value]
+ *
+ * @example
+ * ['age', '>=', 18]
+ * ['status', '==', 'active']
  */
-export interface Where {
-  /** Field path to filter on (string or FieldPath) */
-  fieldPath: string | FieldPath;
-  /** Comparison operator (==, !=, <, <=, >, >=, array-contains, in, array-contains-any, not-in) */
-  opStr: WhereFilterOp;
-  /** Value to compare against */
-  value: unknown;
-}
+export type WhereClause = [fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown];
 
 /**
  * Query condition configuration
@@ -22,26 +19,23 @@ export interface Where {
  * ```typescript
  * const condition: Condition = {
  *   where: [
- *     { fieldPath: 'age', opStr: '>=', value: 18 },
- *     { fieldPath: 'status', opStr: '==', value: 'active' }
+ *     ['age', '>=', 18],
+ *     ['status', '==', 'active']
  *   ],
- *   orderBy: { fieldPath: 'createdAt', directionStr: 'desc' },
+ *   orderBy: ['createdAt', 'desc'],
  *   limit: 10
  * };
  * ```
  */
 export interface Condition {
   /** Array of where clauses (all conditions are AND-ed together) */
-  where?: Where[];
+  where?: WhereClause[];
   /** Maximum number of documents to return */
   limit?: number;
   /** Maximum number of documents to return from the end of the result set */
   limitToLast?: number;
-  /** Order by field and direction */
-  orderBy?: {
-    fieldPath: string | FieldPath;
-    directionStr?: OrderByDirection | undefined;
-  };
+  /** Order by field and direction: [fieldPath, direction] */
+  orderBy?: [fieldPath: string | FieldPath, directionStr?: OrderByDirection];
   /** Start after this document snapshot (for pagination) */
   startAfter?: DocumentSnapshot<unknown>;
   /** Start at this document snapshot (inclusive) */
@@ -68,8 +62,8 @@ export interface Condition {
  * ```typescript
  * const baseQuery = db.collection('users');
  * const query = buildQuery(baseQuery, {
- *   where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
- *   orderBy: { fieldPath: 'name', directionStr: 'asc' },
+ *   where: [['age', '>=', 18]],
+ *   orderBy: ['name', 'asc'],
  *   limit: 10
  * });
  * ```
@@ -87,12 +81,12 @@ export function buildQuery(ref?: Query<unknown>, condition?: Condition): Query<u
 
   if (condition.where !== undefined) {
     for (const w of condition.where) {
-      result = result.where(w.fieldPath, w.opStr, w.value);
+      result = result.where(w[0], w[1], w[2]);
     }
   }
 
   if (condition.orderBy !== undefined) {
-    result = result.orderBy(condition.orderBy.fieldPath, condition.orderBy.directionStr);
+    result = result.orderBy(condition.orderBy[0], condition.orderBy[1]);
   }
 
   if (condition.limit !== undefined) {

@@ -127,8 +127,8 @@ await existingUser.save();    // Only saves 'age' field
 
 // Example 4: Query with Collection
 const users = new UserCollection(undefined, {
-  where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
-  orderBy: { fieldPath: 'age', directionStr: 'asc' },
+  where: [['age', '>=', 18]],
+  orderBy: ['age', 'asc'],
   limit: 10
 });
 await users.get();
@@ -519,7 +519,7 @@ class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
 }
 
 const users = new UserCollection(undefined, {
-  where: [{ fieldPath: 'age', opStr: '>=', value: 18 }],
+  where: [['age', '>=', 18]],
   limit: 10
 });
 await users.get();
