@@ -1,5 +1,5 @@
 {
-  "name": "@mizushino/firestore-orm",
+  "name": "fire-orm",
   "version": "0.1.1",
   "description": "TypeScript-first ORM library for Firestore with support for both client-side (web) and server-side (admin) environments",
   "type": "module",
