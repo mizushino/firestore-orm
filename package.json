@@ -95,7 +95,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "firebase": "^12.4.0",
     "firebase-admin": "^13.5.0",
-    "firebase-tools": "^14.20.0",
+    "firebase-tools": "^14.22.0",
     "prettier": "^3.6.2",
     "tsx": "^4.20.6",
     "typescript": "~5.9.3",
