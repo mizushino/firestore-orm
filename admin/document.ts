@@ -90,7 +90,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data extends FirestoreData = 
   private _updatedAll = false;
 
   /** Queues for async snapshot generators */
-  private _snapshotQueues: AsyncQueue<any>[] = [];
+  private _snapshotQueues: AsyncQueue<this | undefined>[] = [];
   /** Unsubscribe function for real-time listener */
   private _unwatch?: () => void;
 
@@ -536,7 +536,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data extends FirestoreData = 
    * @yields Document instances on each change
    */
   public async *snapshot<T extends FirestoreDocument>(): AsyncGenerator<T> {
-    const queue = new AsyncQueue<any>();
+    const queue = new AsyncQueue<this | undefined>();
 
     if (this.exist) {
       queue.enqueue(this);
@@ -555,7 +555,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data extends FirestoreData = 
       if (document === undefined) {
         break;
       }
-      yield document as T;
+      yield document as unknown as T;
     }
 
     this._snapshotQueues.splice(this._snapshotQueues.indexOf(queue), 1);
