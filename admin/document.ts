@@ -24,7 +24,7 @@ import { deepEqual, parseKey, buildPath } from '../shared/utils.js';
  * @template Key - Document key type (object with key fields or string array)
  * @template Data - Document data type extending FirestoreData
  */
-export class FirestoreDocument<Key extends FirestoreKey = FirestoreKey, Data extends FirestoreData = FirestoreData> {
+export class FirestoreDocument<Key = FirestoreKey, Data extends FirestoreData = FirestoreData> {
   public get static(): typeof FirestoreDocument {
     return this.constructor as typeof FirestoreDocument;
   }
@@ -90,7 +90,7 @@ export class FirestoreDocument<Key extends FirestoreKey = FirestoreKey, Data ext
   private _updatedAll = false;
 
   /** Queues for async snapshot generators */
-  private _snapshotQueues: AsyncQueue<FirestoreDocument<FirestoreKey, FirestoreData> | undefined>[] = [];
+  private _snapshotQueues: AsyncQueue<any>[] = [];
   /** Unsubscribe function for real-time listener */
   private _unwatch?: () => void;
 
@@ -536,7 +536,7 @@ export class FirestoreDocument<Key extends FirestoreKey = FirestoreKey, Data ext
    * @yields Document instances on each change
    */
   public async *snapshot<T extends FirestoreDocument>(): AsyncGenerator<T> {
-    const queue = new AsyncQueue<FirestoreDocument | undefined>();
+    const queue = new AsyncQueue<any>();
 
     if (this.exist) {
       queue.enqueue(this);

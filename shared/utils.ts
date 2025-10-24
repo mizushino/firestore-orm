@@ -53,7 +53,7 @@ export function deepEqual(a: unknown, b: unknown): boolean {
  * parseKey('users/123/posts/456')
  * // => ['users', '123', 'posts', '456']
  */
-export function parseKey<Key extends FirestoreKey>(path: string, pathTemplate?: string): Key | string[] {
+export function parseKey<Key = FirestoreKey>(path: string, pathTemplate?: string): Key | string[] {
   const pathParts = path.split('/').filter((p) => p);
 
   if (!pathTemplate) {
@@ -106,7 +106,7 @@ export function parseKey<Key extends FirestoreKey>(path: string, pathTemplate?: 
  * buildPath(['users', '123', 'posts', '456'])
  * // => 'users/123/posts/456'
  */
-export function buildPath(key: FirestoreKey | string[], pathTemplate?: string): string | undefined {
+export function buildPath<Key = FirestoreKey>(key: Key | string[], pathTemplate?: string): string | undefined {
   if (Array.isArray(key)) {
     return key.join('/');
   }

@@ -16,7 +16,7 @@ import { AsyncQueue } from '../shared/async-queue.js';
 import { newId, parseKey, buildPath } from '../shared/utils.js';
 
 export class FirestoreCollection<
-  Key extends FirestoreKey = FirestoreKey,
+  Key = FirestoreKey,
   Data extends FirestoreData = FirestoreData,
   Document extends FirestoreDocument<Key, Data> = FirestoreDocument<Key, Data>,
 > {
