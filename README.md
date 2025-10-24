@@ -37,7 +37,7 @@ npm install @mzsn/firestore firebase-admin
 
 ### Quick Start
 
-```typescript
+```ts
 // Auto-detects environment (browser → web, node → admin)
 import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from '@mzsn/firestore';
 import type { FirestoreKey, FirestoreData } from '@mzsn/firestore';
@@ -168,7 +168,7 @@ try {
 The library provides separate implementations for client-side (web) and server-side (admin) with the **same API**.
 
 **Option 1: Auto-detect (recommended)**
-```typescript
+```ts
 // Automatically uses the right version based on your environment:
 // - Browser/Edge/Worker → web version
 // - Node.js → admin version
@@ -176,7 +176,7 @@ import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore';
 ```
 
 **Option 2: Explicit import (for clarity)**
-```typescript
+```ts
 // Admin SDK (Firebase Functions, Node.js, Cloud Functions)
 import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore/admin';
 
@@ -185,7 +185,7 @@ import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore/web';
 ```
 
 **Web SDK Setup:**
-```typescript
+```ts
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { initializeFirestore } from '@mzsn/firestore/web';
@@ -206,7 +206,7 @@ initializeFirestore(db);
 ```
 
 **Admin SDK Setup:**
-```typescript
+```ts
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeFirestore } from '@mzsn/firestore/admin';
@@ -226,7 +226,7 @@ initializeFirestore(db);
 
 Use static getters for `defaultKey` and `defaultData` to generate dynamic values:
 
-```typescript
+```ts
 import { FirestoreDocument } from '@mzsn/firestore/admin';
 
 // Auto-generate IDs for each new instance
@@ -279,7 +279,7 @@ await config.get();
 
 Define document paths using templates with placeholders:
 
-```typescript
+```ts
 import { FirestoreDocument } from '@mzsn/firestore/web';
 import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/web';
 
@@ -305,7 +305,7 @@ const post = new Post({ userId: 'user123', postId: 'post456' });
 
 All data access goes through a Proxy that automatically tracks changes:
 
-```typescript
+```ts
 const user = new User({ id: 'user123' });
 await user.get();
 
@@ -326,7 +326,7 @@ console.log(user.isDirty);  // false
 
 #### Constructor
 
-```typescript
+```ts
 constructor(key?, data?, exist?)
 ```
 
@@ -351,7 +351,7 @@ constructor(key?, data?, exist?)
 
 Load document from Firestore.
 
-```typescript
+```ts
 await user.get();  // Load from Firestore
 await user.get(transaction);  // Load within transaction
 await user.get(undefined, true);  // Use cache if already loaded
@@ -361,7 +361,7 @@ await user.get(undefined, true);  // Use cache if already loaded
 
 Save changes to Firestore. Auto-detects whether to use `set()` or `update()`.
 
-```typescript
+```ts
 await user.save();  // Update changed fields only
 await user.save(true);  // Force full set operation
 await user.save(false, transaction);  // Save within transaction
@@ -371,7 +371,7 @@ await user.save(false, transaction);  // Save within transaction
 
 Overwrite entire document.
 
-```typescript
+```ts
 await user.set({ name: 'John', age: 30, email: 'john@example.com' });
 await user.set(undefined, transaction);  // Set current data in transaction
 ```
@@ -380,7 +380,7 @@ await user.set(undefined, transaction);  // Set current data in transaction
 
 Update only changed fields.
 
-```typescript
+```ts
 user.data.name = 'Jane';
 await user.update();  // Only updates 'name' field
 ```
@@ -389,7 +389,7 @@ await user.update();  // Only updates 'name' field
 
 Delete document from Firestore.
 
-```typescript
+```ts
 await user.delete();
 await user.delete(transaction);
 ```
@@ -398,7 +398,7 @@ await user.delete(transaction);
 
 Watch document for real-time updates. Returns unsubscribe function.
 
-```typescript
+```ts
 const unsubscribe = user.watch((data) => {
   console.log('Updated:', data);
 });
@@ -411,7 +411,7 @@ unsubscribe();
 
 Async generator for real-time updates.
 
-```typescript
+```ts
 for await (const user of new User({ id: 'user123' }).snapshot()) {
   console.log('Current:', user.data);
   if (someCondition) break;
@@ -422,7 +422,7 @@ for await (const user of new User({ id: 'user123' }).snapshot()) {
 
 Get a deep copy of document data.
 
-```typescript
+```ts
 const userData = user.toObject();
 ```
 
@@ -430,7 +430,7 @@ const userData = user.toObject();
 
 Override these methods in subclasses:
 
-```typescript
+```ts
 import { FirestoreDocument } from '@mzsn/firestore/web';
 import type { FirestoreKey, FirestoreData, FirestoreValue } from '@mzsn/firestore/web';
 
@@ -477,7 +477,7 @@ class User extends FirestoreDocument<UserKey, UserData> {
 
 #### Constructor
 
-```typescript
+```ts
 class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
   protected static pathTemplate = 'users';  // or 'users/{userId}/posts'
   protected static documentClass = User;
@@ -512,7 +512,7 @@ const userPosts = new UserCollection({ userId: 'user123' });  // For subcollecti
 
 Load documents matching query.
 
-```typescript
+```ts
 class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
   protected static pathTemplate = 'users';
   protected static documentClass = User;
@@ -536,7 +536,7 @@ await users.get(true);
 
 Create document with auto-generated ID.
 
-```typescript
+```ts
 const user = await users.add({
   name: 'John',
   age: 30,
@@ -549,7 +549,7 @@ console.log('Created user:', user?.id);
 
 Create/update document with specific ID.
 
-```typescript
+```ts
 const user = await users.set('user123', {
   name: 'Jane',
   age: 25,
@@ -561,7 +561,7 @@ const user = await users.set('user123', {
 
 Delete document by ID.
 
-```typescript
+```ts
 await users.delete('user123');
 ```
 
@@ -569,7 +569,7 @@ await users.delete('user123');
 
 Save all dirty documents in the collection.
 
-```typescript
+```ts
 // Make changes to multiple documents
 users.documents.get('user1')!.data.age = 30;
 users.documents.get('user2')!.data.age = 25;
@@ -582,7 +582,7 @@ await users.save();
 
 Get the first document in the collection.
 
-```typescript
+```ts
 const firstUser = users.first();
 ```
 
@@ -590,7 +590,7 @@ const firstUser = users.first();
 
 Find a document by ID from loaded documents (cache only, doesn't query Firestore).
 
-```typescript
+```ts
 const user = users.find('user123');
 ```
 
@@ -598,7 +598,7 @@ const user = users.find('user123');
 
 Convert documents map to array.
 
-```typescript
+```ts
 const userArray = users.toArray();
 ```
 
@@ -606,7 +606,7 @@ const userArray = users.toArray();
 
 Get all documents as an array, loading if necessary.
 
-```typescript
+```ts
 const userArray = await users.docs();
 const freshUserArray = await users.docs(true); // Force reload
 ```
@@ -615,7 +615,7 @@ const freshUserArray = await users.docs(true); // Force reload
 
 Watch collection for real-time updates.
 
-```typescript
+```ts
 users.watch((snapshot) => {
   console.log(`Collection has ${users.documents.size} documents`);
   console.log('Changes:', snapshot.docChanges());
@@ -626,7 +626,7 @@ users.watch((snapshot) => {
 
 Cancel all active snapshot listeners.
 
-```typescript
+```ts
 users.unwatch();
 ```
 
@@ -634,7 +634,7 @@ users.unwatch();
 
 Async generator for real-time collection updates.
 
-```typescript
+```ts
 for await (const documents of users.snapshot()) {
   console.log('Documents updated:', documents.length);
   for (const doc of documents) {
@@ -647,7 +647,7 @@ for await (const documents of users.snapshot()) {
 
 Batch operations are provided as standalone functions that handle Firestore's 500-document batch limit automatically.
 
-```typescript
+```ts
 import { batchSave, batchDelete } from '@mzsn/firestore/admin';
 ```
 
@@ -655,7 +655,7 @@ import { batchSave, batchDelete } from '@mzsn/firestore/admin';
 
 Save multiple documents in batches.
 
-```typescript
+```ts
 const documents = [user1, user2, user3, /* ... up to 1000s ... */];
 
 // Automatically chunks into batches of 500
@@ -666,7 +666,7 @@ await batchSave(documents);
 
 Delete multiple documents in batches.
 
-```typescript
+```ts
 const documentsToDelete = Array.from(users.documents.values());
 
 // Automatically chunks into batches of 500
@@ -675,7 +675,7 @@ await batchDelete(documentsToDelete);
 
 ### Query Conditions
 
-```typescript
+```ts
 // Where clause tuple: [fieldPath, operator, value]
 type WhereClause = [fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown];
 
@@ -709,7 +709,7 @@ const condition2: Condition = {
 
 ### Nested Collections
 
-```typescript
+```ts
 import { FirestoreDocument } from '@mzsn/firestore/web';
 import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/web';
 
@@ -738,7 +738,7 @@ const comment = new Comment({
 
 ### Transactions
 
-```typescript
+```ts
 import { getFirestore } from 'firebase/firestore';
 import { runTransaction } from 'firebase/firestore';
 
@@ -759,7 +759,7 @@ await runTransaction(getFirestore(), async (transaction) => {
 
 ### Custom Validation
 
-```typescript
+```ts
 import { FirestoreDocument } from '@mzsn/firestore/web';
 import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/web';
 
@@ -789,7 +789,7 @@ class User extends FirestoreDocument<UserKey, UserData> {
 
 ### Real-time UI Updates
 
-```typescript
+```ts
 // React example
 function UserProfile({ userId }: { userId: string }) {
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -813,7 +813,7 @@ function UserProfile({ userId }: { userId: string }) {
 
 The library also exports utility functions:
 
-```typescript
+```ts
 import {
   deepEqual,
   parseKey,
