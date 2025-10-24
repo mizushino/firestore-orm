@@ -1,4 +1,4 @@
-import { type FirestoreKey, FirestoreDocumentError } from './types';
+import { type FirestoreKey, FirestoreDocumentError } from './types.js';
 
 /**
  * Performs deep equality comparison for objects, arrays, and primitives
