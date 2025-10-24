@@ -14,12 +14,12 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 
-import { FirestoreDocument } from './document';
-import { firestore } from './firestore';
-import { buildQuery, type Condition } from './query';
-import { type FirestoreData, type FirestoreKey, FirestoreDocumentError } from './types';
-import { AsyncQueue } from '../shared/async-queue';
-import { newId, parseKey, buildPath } from '../shared/utils';
+import { FirestoreDocument } from './document.js';
+import { firestore } from './firestore.js';
+import { buildQuery, type Condition } from './query.js';
+import { type FirestoreData, type FirestoreKey, FirestoreDocumentError } from './types.js';
+import { AsyncQueue } from '../shared/async-queue.js';
+import { newId, parseKey, buildPath } from '../shared/utils.js';
 
 export class FirestoreCollection<
   Key extends FirestoreKey = FirestoreKey,
