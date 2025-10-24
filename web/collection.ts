@@ -23,7 +23,7 @@ import { newId, parseKey, buildPath } from '../shared/utils.js';
 
 export class FirestoreCollection<
   Key = FirestoreKey,
-  Data extends FirestoreData = FirestoreData,
+  Data = FirestoreData,
   Document extends FirestoreDocument<Key, Data> = FirestoreDocument<Key, Data>,
 > {
   public get static(): typeof FirestoreCollection {
@@ -184,7 +184,7 @@ export class FirestoreCollection<
    */
   protected applyDocs(docs: QueryDocumentSnapshot<Data>[]): void {
     for (const doc of docs) {
-      const document = this._documents.get(doc.id) ?? new this._ctor(doc.ref, doc, true);
+      const document = this._documents.get(doc.id) ?? new this._ctor(doc.ref as unknown as Key, doc, true);
       this._documents.set(doc.id, document);
     }
     this.isLoaded = true;
@@ -198,7 +198,7 @@ export class FirestoreCollection<
     for (const docChange of docChanges) {
       const doc = docChange.doc;
       if (docChange.type === 'added' || docChange.type === 'modified') {
-        const document = this._documents.get(doc.id) ?? new this._ctor(doc.ref, doc, true);
+        const document = this._documents.get(doc.id) ?? new this._ctor(doc.ref as unknown as Key, doc, true);
         this._documents.set(doc.id, document);
       } else if (docChange.type === 'removed') {
         this._documents.delete(doc.id);
@@ -293,7 +293,7 @@ export class FirestoreCollection<
     }
 
     const reference = doc(this.reference, id);
-    const document = new this._ctor(reference, data, false);
+    const document = new this._ctor(reference as unknown as Key, data, false);
     await document.save(true, transaction);
 
     this._documents.set(reference.id, document);

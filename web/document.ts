@@ -31,7 +31,7 @@ import { deepEqual, parseKey, buildPath } from '../shared/utils.js';
  * @template Key - Document key type (object with key fields or string array)
  * @template Data - Document data type extending FirestoreData
  */
-export class FirestoreDocument<Key = FirestoreKey, Data extends FirestoreData = FirestoreData> {
+export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> {
   public get static(): typeof FirestoreDocument {
     return this.constructor as typeof FirestoreDocument;
   }
@@ -63,7 +63,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data extends FirestoreData = 
   public reference?: DocumentReference;
 
   private _key?: Key | string[];
-  private readonly _data: FirestoreObject = {};
+  private readonly _data: FirestoreData = {};
   /** Proxy wrapper for _data that tracks changes and provides dynamic _id access */
   private readonly _proxyData: Data = new Proxy(this._data, {
     get: (target, prop: string | symbol) => {
@@ -500,11 +500,11 @@ export class FirestoreDocument<Key = FirestoreKey, Data extends FirestoreData = 
    * @returns Deep cloned document data with _id from reference
    */
   public toObject(): Data {
-    const cloned = structuredClone(this._data) as Data;
+    const cloned = structuredClone(this._data);
     if (this.reference?.id) {
       cloned._id = this.reference.id;
     }
-    return cloned;
+    return cloned as Data;
   }
 
   /**
