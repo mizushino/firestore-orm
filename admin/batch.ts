@@ -1,6 +1,6 @@
-import type { FirestoreDocument } from './document';
+import type { FirestoreDocument } from './document.js';
 
-import { firestore } from './firestore';
+import { firestore } from './firestore.js';
 
 /**
  * Splits an array into chunks of specified size

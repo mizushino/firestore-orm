@@ -1,8 +1,8 @@
-import type { FirestoreBasePrimitive } from '../shared/types';
+import type { FirestoreBasePrimitive } from '../shared/types.js';
 import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
-export type { FirestoreKey } from '../shared/types';
-export { FirestoreDocumentError } from '../shared/types';
+export type { FirestoreKey } from '../shared/types.js';
+export { FirestoreDocumentError } from '../shared/types.js';
 
 /**
  * Firestore primitive types that can be stored directly (Admin SDK)

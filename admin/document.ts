@@ -8,16 +8,16 @@ import {
   WriteBatch,
 } from 'firebase-admin/firestore';
 
-import { firestore, DELETE_FIELD } from './firestore';
+import { firestore, DELETE_FIELD } from './firestore.js';
 import {
   type FirestoreData,
   type FirestoreKey,
   type FirestoreObject,
   type FirestoreValue,
   FirestoreDocumentError,
-} from './types';
-import { AsyncQueue } from '../shared/async-queue';
-import { deepEqual, parseKey, buildPath } from '../shared/utils';
+} from './types.js';
+import { AsyncQueue } from '../shared/async-queue.js';
+import { deepEqual, parseKey, buildPath } from '../shared/utils.js';
 
 /**
  * ActiveRecord-style Firestore document class with change tracking
