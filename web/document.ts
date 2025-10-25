@@ -56,7 +56,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
    * Override in subclasses to provide custom default key (e.g., using newId() or timeId())
    * Use getter to generate new IDs on each access
    */
-  public static get defaultKey(): FirestoreKey | string[] | undefined {
+  public static get defaultKey(): FirestoreKey | string[] | object | undefined {
     return undefined;
   }
 
@@ -65,7 +65,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
    * Override in subclasses to provide custom default values
    * Use getter to generate fresh default values on each access (e.g., new Date())
    */
-  public static get defaultData(): FirestoreData {
+  public static get defaultData(): FirestoreData | object | undefined {
     return {};
   }
 

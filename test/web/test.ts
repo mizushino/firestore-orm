@@ -48,11 +48,11 @@ interface UserData {
 class UserDocument extends FirestoreDocument<UserKey, UserData> {
   public static pathTemplate = 'test/{uid}';
 
-  public static get defaultKey(): FirestoreKey {
+  public static get defaultKey(): UserKey {
     return { uid: newId() };
   }
 
-  public static get defaultData(): FirestoreData {
+  public static get defaultData(): UserData {
     return {
       name: '',
       email: '',
