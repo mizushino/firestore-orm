@@ -198,7 +198,7 @@ for (const [id, user] of users.documents) {
 - `data` - Proxied data object with change tracking
 - `key` - Document key object
 - `id` - Document ID
-- `exist` - Whether document exists in Firestore
+- `exists` - Whether document exists in Firestore
 - `isNew` - Whether document hasn't been saved yet
 - `isDirty` - Whether document has unsaved changes
 - `isLoaded` - Whether document has been loaded from Firestore

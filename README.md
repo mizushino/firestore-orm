@@ -327,19 +327,19 @@ console.log(user.isDirty);  // false
 #### Constructor
 
 ```ts
-constructor(key?, data?, exist?)
+constructor(key?, data?, exists?)
 ```
 
 - `key`: Document key object or path string
 - `data`: Initial data (optional)
-- `exist`: Whether document exists (default: false)
+- `exists`: Whether document exists (default: false)
 
 #### Properties
 
 - `data: Data` - Data proxy with change tracking
 - `key: Key` - Document key object
 - `id: string` - Document ID
-- `exist: boolean` - Whether document exists in Firestore
+- `exists: boolean` - Whether document exists in Firestore
 - `isNew: boolean` - Whether document is new (not saved)
 - `isDirty: boolean` - Whether document has unsaved changes
 - `isLoaded: boolean` - Whether document has been loaded
