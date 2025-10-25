@@ -1,4 +1,4 @@
-import type { FirestoreDocument } from './document.js';
+import type { BaseFirestoreDocument } from './document.js';
 
 import { writeBatch } from 'firebase/firestore';
 
@@ -20,7 +20,7 @@ function chunk<T>(array: T[], size: number): T[][] {
  * Saves multiple documents in batches of 500 (Firestore batch limit)
  * @param documents - Documents to save
  */
-export async function batchSave(documents: FirestoreDocument[]): Promise<void> {
+export async function batchSave(documents: BaseFirestoreDocument[]): Promise<void> {
   if (documents.length === 0) return;
 
   const db = firestore();
@@ -41,7 +41,7 @@ export async function batchSave(documents: FirestoreDocument[]): Promise<void> {
  * Deletes multiple documents in batches of 500 (Firestore batch limit)
  * @param documents - Documents to delete
  */
-export async function batchDelete(documents: FirestoreDocument[]): Promise<void> {
+export async function batchDelete(documents: BaseFirestoreDocument[]): Promise<void> {
   if (documents.length === 0) return;
 
   const db = firestore();

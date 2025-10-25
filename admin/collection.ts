@@ -1,3 +1,5 @@
+import type { BaseFirestoreDocument } from './document.js';
+
 import {
   type CollectionReference,
   type DocumentChange,
@@ -34,8 +36,7 @@ export class FirestoreCollection<
    * Document class constructor for creating document instances
    * Override in subclasses to define the document type
    */
-
-  public static documentClass: typeof FirestoreDocument<FirestoreKey, FirestoreData> = FirestoreDocument;
+  public static documentClass: typeof BaseFirestoreDocument = FirestoreDocument;
 
   /**
    * Collection key used to identify this collection

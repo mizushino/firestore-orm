@@ -32,11 +32,11 @@ console.log('✓ Connected to Firestore Emulator at localhost:8080');
 initializeFirestore(db);
 
 // Define your key and data types
-interface UserKey extends FirestoreKey {
+interface UserKey {
   uid: string;
 }
 
-interface UserData extends FirestoreData {
+interface UserData {
   name: string;
   email: string;
   age: number;
@@ -48,11 +48,11 @@ interface UserData extends FirestoreData {
 class UserDocument extends FirestoreDocument<UserKey, UserData> {
   public static pathTemplate = 'test/{uid}';
 
-  public static get defaultKey(): UserKey {
+  public static get defaultKey(): FirestoreKey {
     return { uid: newId() };
   }
 
-  public static get defaultData(): UserData {
+  public static get defaultData(): FirestoreData {
     return {
       name: '',
       email: '',

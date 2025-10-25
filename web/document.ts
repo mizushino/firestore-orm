@@ -27,11 +27,20 @@ import { AsyncQueue } from '../shared/async-queue.js';
 import { deepEqual, parseKey, buildPath } from '../shared/utils.js';
 
 /**
+ * Abstract base class for Firestore documents
+ * Used for type-safe batch operations
+ */
+export abstract class BaseFirestoreDocument {
+  public abstract save(force?: boolean, transaction?: Transaction | WriteBatch): Promise<void>;
+  public abstract delete(transaction?: Transaction | WriteBatch): Promise<void>;
+}
+
+/**
  * ActiveRecord-style Firestore document class with change tracking
  * @template Key - Document key type (object with key fields or string array)
  * @template Data - Document data type extending FirestoreData
  */
-export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> {
+export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends BaseFirestoreDocument {
   public get static(): typeof FirestoreDocument {
     return this.constructor as typeof FirestoreDocument;
   }
@@ -97,7 +106,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> {
   private _updatedAll = false;
 
   /** Queues for async snapshot generators */
-  private _snapshotQueues: AsyncQueue<this | undefined>[] = [];
+  private _snapshotQueues: AsyncQueue<FirestoreDocument<Key, Data>>[] = [];
   /** Unsubscribe function for real-time listener */
   private _unwatch?: () => void;
 
@@ -151,6 +160,8 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> {
   }
 
   constructor(keyOrRef?: Key | string | DocumentReference, data: Data | DocumentSnapshot | null = null, exist = false) {
+    super();
+
     if (data === null) {
       data = this.static.defaultData as Data;
     }
@@ -545,8 +556,8 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> {
    * Creates an async generator for document snapshots
    * @yields Document instances on each change
    */
-  public async *snapshot<T extends FirestoreDocument>(): AsyncGenerator<T> {
-    const queue = new AsyncQueue<this | undefined>();
+  public async *snapshot(): AsyncGenerator<FirestoreDocument<Key, Data>> {
+    const queue = new AsyncQueue<FirestoreDocument<Key, Data>>();
 
     if (this.exist) {
       queue.enqueue(this);
@@ -565,7 +576,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> {
       if (document === undefined) {
         break;
       }
-      yield document as unknown as T;
+      yield document;
     }
 
     this._snapshotQueues.splice(this._snapshotQueues.indexOf(queue), 1);
