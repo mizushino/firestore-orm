@@ -95,7 +95,7 @@ export class FirestoreCollection<
     new (
       key?: Key | string | DocumentReference,
       data?: Data | QueryDocumentSnapshot<Data> | null,
-      exist?: boolean,
+      exists?: boolean,
     ): Document;
     readonly defaultData: FirestoreData;
     readonly defaultKey?: FirestoreKey | string[];

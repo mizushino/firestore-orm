@@ -97,7 +97,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
       return true;
     },
   }) as Data;
-  private _exist = false;
+  private _exists = false;
   private _isLoaded = false;
 
   /** Tracks old values of changed fields for rollback */
@@ -134,15 +134,15 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   /**
    * Whether this document exists in Firestore
    */
-  public get exist(): boolean {
-    return this._exist;
+  public get exists(): boolean {
+    return this._exists;
   }
 
   /**
    * Whether this document is new (not yet saved to Firestore)
    */
   public get isNew(): boolean {
-    return !this._exist;
+    return !this._exists;
   }
 
   /**
@@ -159,7 +159,11 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
     return this._isLoaded;
   }
 
-  constructor(keyOrRef?: Key | string | DocumentReference, data: Data | DocumentSnapshot | null = null, exist = false) {
+  constructor(
+    keyOrRef?: Key | string | DocumentReference,
+    data: Data | DocumentSnapshot | null = null,
+    exists = false,
+  ) {
     super();
 
     if (data === null) {
@@ -174,8 +178,8 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
       this.setKey(this.static.defaultKey as Key);
     }
 
-    this._exist = exist;
-    this.setData(data, !exist);
+    this._exists = exists;
+    this.setData(data, !exists);
   }
 
   /**
@@ -266,7 +270,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
       throw new FirestoreDocumentError('Document reference is not set');
     }
 
-    await (this._exist && !force && !this._updatedAll ? this.update(transaction) : this.set(undefined, transaction));
+    await (this._exists && !force && !this._updatedAll ? this.update(transaction) : this.set(undefined, transaction));
   }
 
   /**
@@ -409,7 +413,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   protected afterSave(): void {
     this._updated.clear();
     this._updatedAll = false;
-    this._exist = true;
+    this._exists = true;
   }
 
   /**
@@ -429,7 +433,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
 
     if (value === undefined) {
       if (key in this._data) {
-        if (this.exist) {
+        if (this.exists) {
           this._data[key] = DELETE_FIELD;
         } else {
           // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -493,11 +497,11 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
       throw new FirestoreDocumentError('Document reference is not set');
     }
 
-    if (!this._exist) {
+    if (!this._exists) {
       return;
     }
 
-    this._exist = false;
+    this._exists = false;
 
     if (transaction) {
       transaction.delete(this.reference);
@@ -533,7 +537,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
     this._unwatch = onSnapshot(this.reference, (snapshot) => {
       this.setDataFromSnapshot(snapshot);
 
-      if (this._exist && callback) {
+      if (this._exists && callback) {
         callback(this.data);
       }
     });
@@ -559,7 +563,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   public async *snapshot(): AsyncGenerator<FirestoreDocument<Key, Data>> {
     const queue = new AsyncQueue<FirestoreDocument<Key, Data>>();
 
-    if (this.exist) {
+    if (this.exists) {
       queue.enqueue(this);
     }
 
@@ -618,13 +622,13 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
 
   /**
    * Updates document data and metadata from a Firestore snapshot
-   * Sets _exist flag, extracts document ID and key, and unserializes data
+   * Sets _exists flag, extracts document ID and key, and unserializes data
    * @param snapshot - Firestore document snapshot
    */
   protected setDataFromSnapshot(snapshot: DocumentSnapshot<DocumentData>): void {
-    this._exist = snapshot.exists();
+    this._exists = snapshot.exists();
 
-    if (!this._exist) {
+    if (!this._exists) {
       this.setData(this.static.defaultData as Data);
       return;
     }
