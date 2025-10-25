@@ -120,7 +120,7 @@ async function testCRUD(): Promise<void> {
   console.log('✓ User loaded:', userRead.toObject());
 
   // Assert user exists and has correct data
-  if (!userRead.exist) {
+  if (!userRead.exists) {
     throw new Error('User should exist after creation');
   }
   if (userRead.data.name !== 'John Doe') {
@@ -158,10 +158,10 @@ async function testCRUD(): Promise<void> {
   // Verify deletion
   const userDeleted = new UserDocument({ uid: 'user123' });
   await userDeleted.get();
-  console.log('✓ User exists:', userDeleted.exist);
+  console.log('✓ User exists:', userDeleted.exists);
 
   // Assert user doesn't exist
-  if (userDeleted.exist) {
+  if (userDeleted.exists) {
     throw new Error('User should not exist after deletion');
   }
 
