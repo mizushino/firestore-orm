@@ -1,6 +1,6 @@
 {
   "name": "@mzsn/firestore",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "TypeScript-first ORM library for Firestore with support for both client-side (web) and server-side (admin) environments",
   "type": "module",
   "main": "./dist/admin/index.js",
