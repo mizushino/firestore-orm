@@ -22,7 +22,7 @@ firestore-orm/
 │   ├── collection.ts   # FirestoreCollection for web
 │   ├── query.ts        # buildQuery helper
 │   ├── batch.ts        # batchSave, batchDelete
-│   ├── firestore.ts    # Firestore singleton
+│   ├── firestore.ts    # setupFirestore, firestore (multi-database support)
 │   ├── types.ts        # Web-specific type exports
 │   └── index.ts        # Public API exports
 ├── admin/              # Server-side implementation (firebase-admin/firestore)
@@ -30,7 +30,7 @@ firestore-orm/
 │   ├── collection.ts   # FirestoreCollection for admin
 │   ├── query.ts        # buildQuery helper
 │   ├── batch.ts        # batchSave, batchDelete
-│   ├── firestore.ts    # Firestore singleton
+│   ├── firestore.ts    # setupFirestore, firestore (multi-database support)
 │   ├── types.ts        # Admin-specific type exports
 │   └── index.ts        # Public API exports
 ├── test/               # Test files (not published to npm)
@@ -453,12 +453,14 @@ When working with this codebase:
 4. **Path templates**: Use `{field}` syntax, not `:field` or other formats
 5. **defaultData**: Required static getter on all Document classes - use getter for dynamic values like `new Date()`
 6. **defaultKey**: Optional static getter for auto-initialization when no key is provided to constructor - use getter for dynamic IDs like `newId()` or `timeId()`
-7. **Validation**: Implement `beforeSave()` hook for validation and auto-updating timestamps (like `updatedAt`)
-8. **Collection inheritance pattern**:
-   - Define `pathTemplate` and `documentClass` as `public static` properties in subclasses
+7. **databaseId**: Optional static property to specify which database to use (default: `''` for default database)
+8. **Multiple databases**: Use `setupFirestore(db, databaseId)` to register databases, then set `static databaseId` on Document/Collection classes
+9. **Validation**: Implement `beforeSave()` hook for validation and auto-updating timestamps (like `updatedAt`)
+10. **Collection inheritance pattern**:
+   - Define `pathTemplate`, `databaseId`, and `documentClass` as `public static` properties in subclasses
    - Constructor signature: `new UserCollection(key?, condition?)`
-9. **Batch limit**: Firestore has 500-document batch limit (handled automatically)
-10. **instanceof issue**: When testing locally with `file:../..` dependencies, `instanceof DocumentReference` may fail due to module duplication. Use duck typing or ensure proper module resolution.
+11. **Batch limit**: Firestore has 500-document batch limit (handled automatically)
+12. **instanceof issue**: When testing locally with `file:../..` dependencies, `instanceof DocumentReference` may fail due to module duplication. Use duck typing or ensure proper module resolution.
 
 ## References
 

@@ -6,7 +6,7 @@ import {
   type FirestoreData,
   FirestoreDocument,
   FirestoreCollection,
-  setFirestore,
+  setupFirestore,
   batchDelete,
   newId,
 } from '../../admin';
@@ -29,7 +29,7 @@ db.settings({
 console.log('✓ Connected to Firestore Emulator at localhost:8080');
 
 // Initialize Firestore ORM
-setFirestore(db);
+setupFirestore(db);
 
 // Define your key and data types
 interface UserKey {

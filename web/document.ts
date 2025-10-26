@@ -608,7 +608,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
 
     const pathSegments = buildPath(this._key, this.static.pathTemplate);
     if (pathSegments !== undefined) {
-      // Use the firestore() function which returns the custom instance set by setFirestore()
+      // Use the firestore() function which returns the custom instance set by setupFirestore()
       // or falls back to getFirestore() if not set
       const db = firestore(this.static.databaseId);
 

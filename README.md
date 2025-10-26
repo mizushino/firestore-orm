@@ -38,11 +38,11 @@ npm install @mzsn/firestore firebase-admin
 
 ```ts
 // Auto-detects environment (browser → web, node → admin)
-import { FirestoreDocument, FirestoreCollection, setFirestore, newId } from '@mzsn/firestore';
+import { FirestoreDocument, FirestoreCollection, setupFirestore, newId } from '@mzsn/firestore';
 import type { FirestoreKey, FirestoreData } from '@mzsn/firestore';
 
 // Or explicitly specify (recommended for clarity)
-// import { FirestoreDocument, FirestoreCollection, setFirestore, newId } from '@mzsn/firestore/admin';
+// import { FirestoreDocument, FirestoreCollection, setupFirestore, newId } from '@mzsn/firestore/admin';
 // import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/admin';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -50,7 +50,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 // Initialize Firebase Admin
 const app = initializeApp({ projectId: 'your-project-id' });
 const db = getFirestore(app);
-setFirestore(db);
+setupFirestore(db);
 
 // Define your types
 interface UserKey extends FirestoreKey {
@@ -187,7 +187,7 @@ import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore/web';
 ```ts
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { setFirestore } from '@mzsn/firestore/web';
+import { setupFirestore } from '@mzsn/firestore/web';
 
 const app = initializeApp({
   apiKey: 'your-api-key',
@@ -201,14 +201,14 @@ const db = getFirestore(app);
 connectFirestoreEmulator(db, 'localhost', 8080);
 
 // Initialize ORM
-setFirestore(db);
+setupFirestore(db);
 ```
 
 **Admin SDK Setup:**
 ```ts
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { setFirestore } from '@mzsn/firestore/admin';
+import { setupFirestore } from '@mzsn/firestore/admin';
 
 const app = initializeApp();
 const db = getFirestore(app);
@@ -218,7 +218,7 @@ process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 db.settings({ host: 'localhost:8080', ssl: false });
 
 // Initialize ORM
-setFirestore(db);
+setupFirestore(db);
 ```
 
 ### Multiple Database Support
@@ -226,16 +226,16 @@ setFirestore(db);
 You can use multiple Firestore databases by specifying a `databaseId`:
 
 ```ts
-import { setFirestore, FirestoreDocument } from '@mzsn/firestore/admin';
+import { setupFirestore, FirestoreDocument } from '@mzsn/firestore/admin';
 import { getFirestore } from 'firebase-admin/firestore';
 
 // Register default database
 const db = getFirestore();
-setFirestore(db); // or setFirestore(db, '')
+setupFirestore(db); // or setupFirestore(db, '')
 
 // Register additional databases
 const dbSub = getFirestore('sub');
-setFirestore(dbSub, 'sub');
+setupFirestore(dbSub, 'sub');
 
 // Use specific database in Document class
 class UserDocument extends FirestoreDocument<UserKey, UserData> {

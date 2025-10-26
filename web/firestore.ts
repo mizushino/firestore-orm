@@ -16,16 +16,16 @@ const _firestores = new Map<string, Firestore>();
  * @example
  * ```typescript
  * import { getFirestore } from 'firebase/firestore';
- * import { setFirestore } from 'firestore-orm/web';
+ * import { setupFirestore } from 'firestore-orm/web';
  *
  * const db = getFirestore(app);
- * setFirestore(db); // Register default database
+ * setupFirestore(db); // Register default database
  *
  * const dbSub = getFirestore(app, 'sub');
- * setFirestore(dbSub, 'sub'); // Register secondary database
+ * setupFirestore(dbSub, 'sub'); // Register secondary database
  * ```
  */
-export function setFirestore(db: Firestore, databaseId = ''): void {
+export function setupFirestore(db: Firestore, databaseId = ''): void {
   _firestores.set(databaseId, db);
 }
 
