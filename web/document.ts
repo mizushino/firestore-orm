@@ -52,6 +52,12 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   public static pathTemplate = '';
 
   /**
+   * Database ID to use for this document class
+   * Override in subclasses to use a specific database (default: '(default)')
+   */
+  public static databaseId = '(default)';
+
+  /**
    * Default key for new documents
    * Override in subclasses to provide custom default key (e.g., using newId() or timeId())
    * Use getter to generate new IDs on each access
@@ -602,9 +608,9 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
 
     const pathSegments = buildPath(this._key, this.static.pathTemplate);
     if (pathSegments !== undefined) {
-      // Use the firestore() function which returns the custom instance set by initializeFirestore()
+      // Use the firestore() function which returns the custom instance set by setFirestore()
       // or falls back to getFirestore() if not set
-      const db = firestore();
+      const db = firestore(this.static.databaseId);
 
       // Build the document reference directly using doc() with path string
       this.reference = doc(db, pathSegments);

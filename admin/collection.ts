@@ -33,6 +33,12 @@ export class FirestoreCollection<
   public static pathTemplate = '';
 
   /**
+   * Database ID to use for this collection class
+   * Override in subclasses to use a specific database (default: '(default)')
+   */
+  public static databaseId = '(default)';
+
+  /**
    * Document class constructor for creating document instances
    * Override in subclasses to define the document type
    */
@@ -143,10 +149,10 @@ export class FirestoreCollection<
 
     if (typeof key === 'string') {
       // If key is a simple string path, use it directly as collection path
-      this.reference = firestore().collection(key) as CollectionReference<Data>;
+      this.reference = firestore(this.static.databaseId).collection(key) as CollectionReference<Data>;
     } else if (key === undefined && this.static.pathTemplate) {
       // If no key provided but pathTemplate exists, use pathTemplate directly
-      this.reference = firestore().collection(this.static.pathTemplate) as CollectionReference<Data>;
+      this.reference = firestore(this.static.databaseId).collection(this.static.pathTemplate) as CollectionReference<Data>;
     } else {
       // Standard key-based initialization
       this.key = key as Key | string[] | undefined;
@@ -248,7 +254,7 @@ export class FirestoreCollection<
         await document.save(false, transaction);
       }
     } else {
-      await firestore().runTransaction(async (transaction) => {
+      await firestore(this.static.databaseId).runTransaction(async (transaction) => {
         for (const document of this._documents.values()) {
           await document.save(false, transaction);
         }
@@ -443,7 +449,7 @@ export class FirestoreCollection<
 
     const path = buildPath(this._key, this.static.pathTemplate);
     if (path !== undefined) {
-      this.reference = firestore().collection(path) as CollectionReference<Data>;
+      this.reference = firestore(this.static.databaseId).collection(path) as CollectionReference<Data>;
       this.condition = this._condition;
     } else {
       this.reference = undefined;

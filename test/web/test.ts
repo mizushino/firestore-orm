@@ -3,7 +3,7 @@ import type { FirestoreKey, FirestoreData } from '../../web';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
-import { FirestoreDocument, FirestoreCollection, initializeFirestore, batchDelete, newId } from '../../web';
+import { FirestoreDocument, FirestoreCollection, setFirestore, batchDelete, newId } from '../../web';
 
 // Initialize Firebase with dummy config (emulator doesn't need real credentials)
 const app = initializeApp({
@@ -29,7 +29,7 @@ try {
 }
 
 // Initialize Firestore ORM
-initializeFirestore(db);
+setFirestore(db);
 
 // Define your key and data types
 interface UserKey {

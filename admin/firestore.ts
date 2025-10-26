@@ -2,39 +2,48 @@ import { type Firestore, FieldValue } from 'firebase-admin/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
 
 /**
- * Shared Firestore instance
+ * Map of Firestore instances by database ID
  */
-let _firestore: Firestore | undefined;
+const _firestores = new Map<string, Firestore>();
 
 /**
- * Initializes the Firestore ORM with a Firestore instance
+ * Sets a Firestore instance for a specific database ID
  *
- * This function should be called once at the start of your application.
+ * This function should be called to register Firestore instances for each database you want to use.
  *
  * @param db - Firestore instance to use
+ * @param databaseId - Database ID (default: '(default)')
  *
  * @example
  * ```typescript
  * import { getFirestore } from 'firebase-admin/firestore';
- * import { initializeFirestore } from 'firestore-orm/admin';
+ * import { setFirestore } from 'firestore-orm/admin';
  *
  * const db = getFirestore(app);
- * initializeFirestore(db);
+ * setFirestore(db); // Register default database
+ *
+ * const dbJapan = getFirestore(app, 'db-japan');
+ * setFirestore(dbJapan, 'db-japan'); // Register secondary database
  * ```
  */
-export function initializeFirestore(db: Firestore): void {
-  _firestore = db;
+export function setFirestore(db: Firestore, databaseId = '(default)'): void {
+  _firestores.set(databaseId, db);
 }
 
 /**
- * Gets or initializes the Firestore instance
+ * Gets or initializes the Firestore instance for a specific database ID
+ * @param databaseId - Database ID (default: '(default)')
  * @returns Firestore instance
  */
-export function firestore(): Firestore {
-  if (!_firestore) {
-    _firestore = getFirestore();
+export function firestore(databaseId?: string): Firestore {
+  const dbId = databaseId || '(default)';
+  let db = _firestores.get(dbId);
+  if (!db) {
+    // Auto-initialize default database
+    db = getFirestore();
+    _firestores.set(dbId, db);
   }
-  return _firestore;
+  return db;
 }
 
 /**
