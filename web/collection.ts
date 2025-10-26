@@ -40,9 +40,9 @@ export class FirestoreCollection<
 
   /**
    * Database ID to use for this collection class
-   * Override in subclasses to use a specific database (default: '(default)')
+   * Override in subclasses to use a specific database (default: '')
    */
-  public static databaseId = '(default)';
+  public static databaseId = '';
 
   /**
    * Document class constructor for creating document instances
@@ -158,7 +158,10 @@ export class FirestoreCollection<
       this.reference = collection(firestore(this.static.databaseId), key) as CollectionReference<Data>;
     } else if (key === undefined && this.static.pathTemplate) {
       // If no key provided but pathTemplate exists, use pathTemplate directly
-      this.reference = collection(firestore(this.static.databaseId), this.static.pathTemplate) as CollectionReference<Data>;
+      this.reference = collection(
+        firestore(this.static.databaseId),
+        this.static.pathTemplate,
+      ) as CollectionReference<Data>;
     } else {
       // Standard key-based initialization
       this.key = key as Key | string[] | undefined;

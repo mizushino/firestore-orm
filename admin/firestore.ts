@@ -12,7 +12,7 @@ const _firestores = new Map<string, Firestore>();
  * This function should be called to register Firestore instances for each database you want to use.
  *
  * @param db - Firestore instance to use
- * @param databaseId - Database ID (default: '(default)')
+ * @param databaseId - Database ID (default: '')
  *
  * @example
  * ```typescript
@@ -22,26 +22,25 @@ const _firestores = new Map<string, Firestore>();
  * const db = getFirestore(app);
  * setFirestore(db); // Register default database
  *
- * const dbJapan = getFirestore(app, 'db-japan');
- * setFirestore(dbJapan, 'db-japan'); // Register secondary database
+ * const dbSub = getFirestore(app, 'sub');
+ * setFirestore(dbSub, 'sub'); // Register secondary database
  * ```
  */
-export function setFirestore(db: Firestore, databaseId = '(default)'): void {
+export function setFirestore(db: Firestore, databaseId = ''): void {
   _firestores.set(databaseId, db);
 }
 
 /**
  * Gets or initializes the Firestore instance for a specific database ID
- * @param databaseId - Database ID (default: '(default)')
+ * @param databaseId - Database ID (default: '')
  * @returns Firestore instance
  */
-export function firestore(databaseId?: string): Firestore {
-  const dbId = databaseId || '(default)';
-  let db = _firestores.get(dbId);
+export function firestore(databaseId = ''): Firestore {
+  let db = _firestores.get(databaseId);
   if (!db) {
     // Auto-initialize default database
     db = getFirestore();
-    _firestores.set(dbId, db);
+    _firestores.set(databaseId, db);
   }
   return db;
 }

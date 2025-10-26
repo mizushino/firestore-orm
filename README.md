@@ -13,8 +13,7 @@ TypeScript-first ORM library for Firestore with support for both client-side (we
 - **Auto-generated IDs** - Optional automatic ID generation with `defaultKey`
 - **Lifecycle hooks** - Built-in validation and timestamp management with `beforeSave`/`afterSave`
 - **Works everywhere** - Both `firebase` (web) and `firebase-admin` (server) SDKs
-- **Real-time updates** - Built-in snapshot listeners with async generators
-- **Type-safe** - Full TypeScript support with generics and inference
+- **Multiple database support** - Use multiple Firestore databases with `databaseId`
 - **Path templates** - Flexible document path configuration with placeholders
 
 ## Installation
@@ -39,11 +38,11 @@ npm install @mzsn/firestore firebase-admin
 
 ```ts
 // Auto-detects environment (browser → web, node → admin)
-import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from '@mzsn/firestore';
+import { FirestoreDocument, FirestoreCollection, setFirestore, newId } from '@mzsn/firestore';
 import type { FirestoreKey, FirestoreData } from '@mzsn/firestore';
 
 // Or explicitly specify (recommended for clarity)
-// import { FirestoreDocument, FirestoreCollection, initializeFirestore, newId } from '@mzsn/firestore/admin';
+// import { FirestoreDocument, FirestoreCollection, setFirestore, newId } from '@mzsn/firestore/admin';
 // import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/admin';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -51,7 +50,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 // Initialize Firebase Admin
 const app = initializeApp({ projectId: 'your-project-id' });
 const db = getFirestore(app);
-initializeFirestore(db);
+setFirestore(db);
 
 // Define your types
 interface UserKey extends FirestoreKey {
@@ -188,7 +187,7 @@ import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore/web';
 ```ts
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { initializeFirestore } from '@mzsn/firestore/web';
+import { setFirestore } from '@mzsn/firestore/web';
 
 const app = initializeApp({
   apiKey: 'your-api-key',
@@ -202,14 +201,14 @@ const db = getFirestore(app);
 connectFirestoreEmulator(db, 'localhost', 8080);
 
 // Initialize ORM
-initializeFirestore(db);
+setFirestore(db);
 ```
 
 **Admin SDK Setup:**
 ```ts
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initializeFirestore } from '@mzsn/firestore/admin';
+import { setFirestore } from '@mzsn/firestore/admin';
 
 const app = initializeApp();
 const db = getFirestore(app);
@@ -219,7 +218,40 @@ process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 db.settings({ host: 'localhost:8080', ssl: false });
 
 // Initialize ORM
-initializeFirestore(db);
+setFirestore(db);
+```
+
+### Multiple Database Support
+
+You can use multiple Firestore databases by specifying a `databaseId`:
+
+```ts
+import { setFirestore, FirestoreDocument } from '@mzsn/firestore/admin';
+import { getFirestore } from 'firebase-admin/firestore';
+
+// Register default database
+const db = getFirestore();
+setFirestore(db); // or setFirestore(db, '')
+
+// Register additional databases
+const dbSub = getFirestore('sub');
+setFirestore(dbSub, 'sub');
+
+// Use specific database in Document class
+class UserDocument extends FirestoreDocument<UserKey, UserData> {
+  public static pathTemplate = 'users/{uid}';
+  public static databaseId = ''; // Default database
+}
+
+class SubUserDocument extends FirestoreDocument<UserKey, UserData> {
+  public static pathTemplate = 'users/{uid}';
+  public static databaseId = 'sub'; // Secondary database
+}
+
+// Or create a subclass
+class SubUserDocument extends UserDocument {
+  public static databaseId = 'sub';
+}
 ```
 
 ### Auto-Generated Keys and Default Data

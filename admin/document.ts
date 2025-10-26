@@ -46,9 +46,9 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
 
   /**
    * Database ID to use for this document class
-   * Override in subclasses to use a specific database (default: '(default)')
+   * Override in subclasses to use a specific database (default: '')
    */
-  public static databaseId = '(default)';
+  public static databaseId = '';
 
   /**
    * Default key for new documents
