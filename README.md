@@ -103,7 +103,7 @@ class UserDocument extends FirestoreDocument<UserKey, UserData> {
 }
 
 // Create a Collection class
-class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+class UserCollection extends FirestoreCollection<never, UserKey, UserData, UserDocument> {
   public static pathTemplate = 'users';
   public static documentClass = UserDocument;
 }
@@ -510,19 +510,29 @@ class User extends FirestoreDocument<UserKey, UserData> {
 #### Constructor
 
 ```ts
-class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
-  protected static pathTemplate = 'users';  // or 'users/{userId}/posts'
+class UserCollection extends FirestoreCollection<never, UserKey, UserData, User> {
+  protected static pathTemplate = 'users';  // Top-level collection
   protected static documentClass = User;
+}
+
+// For subcollections, define CollectionKey type
+interface PostCollectionKey {
+  userId: string;
+}
+
+class PostCollection extends FirestoreCollection<PostCollectionKey, PostKey, PostData, Post> {
+  protected static pathTemplate = 'users/{userId}/posts';
+  protected static documentClass = Post;
 }
 
 // Usage
 const users = new UserCollection();  // All documents
 const users = new UserCollection(condition);  // With query condition
-const userPosts = new UserCollection({ userId: 'user123' });  // For subcollections
+const userPosts = new PostCollection({ userId: 'user123' });  // For subcollections
 ```
 
 **Parameters:**
-- `key?: Key` - Collection key object for subcollections (optional)
+- `key?: CollectionKey` - Collection key object for subcollections (optional)
 - `condition?: Condition` - Query conditions (optional)
 
 #### Properties
@@ -545,7 +555,7 @@ const userPosts = new UserCollection({ userId: 'user123' });  // For subcollecti
 Load documents matching query.
 
 ```ts
-class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
+class UserCollection extends FirestoreCollection<never, UserKey, UserData, User> {
   protected static pathTemplate = 'users';
   protected static documentClass = User;
 }
@@ -742,7 +752,7 @@ const condition2: Condition = {
 ### Nested Collections
 
 ```ts
-import { FirestoreDocument } from '@mzsn/firestore/web';
+import { FirestoreDocument, FirestoreCollection } from '@mzsn/firestore/web';
 import type { FirestoreKey, FirestoreData } from '@mzsn/firestore/web';
 
 interface CommentKey extends FirestoreKey {
@@ -761,11 +771,26 @@ class Comment extends FirestoreDocument<CommentKey, CommentData> {
   protected static pathTemplate = 'users/{userId}/posts/{postId}/comments/{commentId}';
 }
 
+// For accessing a single comment
 const comment = new Comment({
   userId: 'user123',
   postId: 'post456',
   commentId: 'comment789'
 });
+
+// For accessing a collection of comments
+interface CommentCollectionKey {
+  userId: string;
+  postId: string;
+}
+
+class CommentCollection extends FirestoreCollection<CommentCollectionKey, CommentKey, CommentData, Comment> {
+  protected static pathTemplate = 'users/{userId}/posts/{postId}/comments';
+  protected static documentClass = Comment;
+}
+
+const comments = new CommentCollection({ userId: 'user123', postId: 'post456' });
+await comments.get();
 ```
 
 ### Transactions

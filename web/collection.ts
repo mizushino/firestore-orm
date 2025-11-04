@@ -24,6 +24,7 @@ import { AsyncQueue } from '../shared/async-queue.js';
 import { newId, parseKey, buildPath } from '../shared/utils.js';
 
 export class FirestoreCollection<
+  CollectionKey = FirestoreKey,
   Key = FirestoreKey,
   Data = FirestoreData,
   Document extends FirestoreDocument<Key, Data> = FirestoreDocument<Key, Data>,
@@ -53,14 +54,14 @@ export class FirestoreCollection<
   /**
    * Collection key used to identify this collection
    */
-  public get key(): Readonly<Key | string[]> | undefined {
+  public get key(): Readonly<CollectionKey | string[]> | undefined {
     return this._key;
   }
 
-  public set key(key: Readonly<Key | string[]> | undefined) {
+  public set key(key: Readonly<CollectionKey | string[]> | undefined) {
     if (key !== undefined) {
       // Clone array to remove readonly
-      const mutableKey: Key | string[] = Array.isArray(key) ? [...key] : (key as Key);
+      const mutableKey: CollectionKey | string[] = Array.isArray(key) ? [...key] : (key as CollectionKey);
       this.setKey(mutableKey);
     } else {
       this._key = undefined;
@@ -106,7 +107,7 @@ export class FirestoreCollection<
     readonly defaultData: FirestoreData;
     readonly defaultKey?: FirestoreKey | string[];
   };
-  protected _key?: Key | string[];
+  protected _key?: CollectionKey | string[];
   protected _condition: Condition | undefined;
   protected _documents: Map<string, Document> = new Map<string, Document>();
 
@@ -136,7 +137,7 @@ export class FirestoreCollection<
     this.unwatch();
   }
 
-  constructor(keyOrCondition?: Key | string[] | string | Condition, condition?: Condition) {
+  constructor(keyOrCondition?: CollectionKey | string[] | string | Condition, condition?: Condition) {
     this._ctor = this.static.documentClass as unknown as typeof this._ctor;
 
     // Type guard: Check if first argument is a Condition (has required 'where' property)
@@ -151,7 +152,7 @@ export class FirestoreCollection<
     }
 
     // Now handle as standard key + condition pattern
-    const key = keyOrCondition as Key | string[] | string | undefined;
+    const key = keyOrCondition as CollectionKey | string[] | string | undefined;
 
     if (typeof key === 'string') {
       // If key is a simple string path, use it directly as collection path
@@ -164,7 +165,7 @@ export class FirestoreCollection<
       ) as CollectionReference<Data>;
     } else {
       // Standard key-based initialization
-      this.key = key as Key | string[] | undefined;
+      this.key = key as CollectionKey | string[] | undefined;
       this.condition = condition;
       return;
     }
@@ -233,7 +234,7 @@ export class FirestoreCollection<
    * @param cache - If true and already loaded, skip loading
    * @returns This collection instance
    */
-  public async get(cache = false): Promise<FirestoreCollection<Key, Data, Document>> {
+  public async get(cache = false): Promise<FirestoreCollection<CollectionKey, Key, Data, Document>> {
     if (cache && this.isLoaded) {
       return this;
     }
@@ -461,11 +462,11 @@ export class FirestoreCollection<
    * Sets the collection key from a Key object, string array, or path string
    * @param keyOrPath - Collection key object, string array, or path string
    */
-  protected setKey(keyOrPath: Key | string[] | string): void {
+  protected setKey(keyOrPath: CollectionKey | string[] | string): void {
     if (typeof keyOrPath === 'string') {
-      this._key = parseKey<Key>(keyOrPath, this.static.pathTemplate);
+      this._key = parseKey<CollectionKey>(keyOrPath, this.static.pathTemplate);
     } else {
-      this._key = keyOrPath as Key | string[];
+      this._key = keyOrPath as CollectionKey | string[];
     }
 
     const pathSegments = buildPath(this._key, this.static.pathTemplate);
@@ -486,7 +487,7 @@ export class FirestoreCollection<
    */
   protected setReference(ref: CollectionReference<Data>): void {
     this.reference = ref;
-    this._key = parseKey<Key>(ref.path, this.static.pathTemplate);
+    this._key = parseKey<CollectionKey>(ref.path, this.static.pathTemplate);
     this.condition = this._condition;
   }
 }

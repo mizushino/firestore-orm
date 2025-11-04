@@ -176,7 +176,7 @@ user.data.age = 30;
 await user.save();
 
 // Collection class with inheritance pattern
-class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+class UserCollection extends FirestoreCollection<never, UserKey, UserData, UserDocument> {
   public static pathTemplate = 'users';
   public static documentClass = UserDocument;
 }
@@ -233,8 +233,8 @@ for (const [id, user] of users.documents) {
 
 **Usage Example:**
 ```typescript
-// Define Collection class
-class UserCollection extends FirestoreCollection<UserKey, UserData, User> {
+// Define Collection class for top-level collection
+class UserCollection extends FirestoreCollection<never, UserKey, UserData, User> {
   protected static pathTemplate = 'users';
   protected static documentClass = User;
 }
@@ -252,7 +252,11 @@ for (const [id, user] of users.documents) {
 }
 
 // For subcollections with keys
-class PostCollection extends FirestoreCollection<PostKey, PostData, Post> {
+interface PostCollectionKey {
+  userId: string;
+}
+
+class PostCollection extends FirestoreCollection<PostCollectionKey, PostKey, PostData, Post> {
   protected static pathTemplate = 'users/{userId}/posts';
   protected static documentClass = Post;
 }
@@ -449,7 +453,11 @@ When working with this codebase:
 
 1. **File structure**: `admin/` and `web/` have parallel implementations
 2. **Type safety**: Always use `interface` (not `type`) for Key and Data definitions - extends `FirestoreKey` and `FirestoreData`
-3. **Type generics**: Always use proper generics `<Key, Data, Document>`
+3. **Type generics**: 
+   - **FirestoreDocument**: Use `<Key, Data>` generics
+   - **FirestoreCollection**: Use `<CollectionKey, Key, Data, Document>` generics
+   - For top-level collections, use `never` for `CollectionKey`
+   - For subcollections, define a `CollectionKey` interface with parent IDs
 4. **Path templates**: Use `{field}` syntax, not `:field` or other formats
 5. **defaultData**: Required static getter on all Document classes - use getter for dynamic values like `new Date()`
 6. **defaultKey**: Optional static getter for auto-initialization when no key is provided to constructor - use getter for dynamic IDs like `newId()` or `timeId()`

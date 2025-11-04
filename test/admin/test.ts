@@ -1,15 +1,7 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-import {
-  type FirestoreKey,
-  type FirestoreData,
-  FirestoreDocument,
-  FirestoreCollection,
-  setupFirestore,
-  batchDelete,
-  newId,
-} from '../../admin';
+import { FirestoreDocument, FirestoreCollection, setupFirestore, batchDelete, newId } from '../../admin';
 
 // Initialize Firebase Admin with emulator
 const app = initializeApp({
@@ -80,7 +72,7 @@ class UserDocument extends FirestoreDocument<UserKey, UserData> {
 }
 
 // Create Collection class with inheritance pattern
-class UserCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+class UserCollection extends FirestoreCollection<never, UserKey, UserData, UserDocument> {
   public static pathTemplate = 'test';
   public static documentClass = UserDocument;
 }
@@ -356,7 +348,7 @@ async function testCollectionInheritance(): Promise<void> {
 
   // Test 3: Direct usage without inheritance (using default documentClass)
   console.log('\nTest 3: Direct usage without inheritance');
-  class DirectCollection extends FirestoreCollection<UserKey, UserData, UserDocument> {
+  class DirectCollection extends FirestoreCollection<never, UserKey, UserData, UserDocument> {
     // Only pathTemplate is defined, documentClass uses default FirestoreDocument
     public static pathTemplate = 'test';
   }
@@ -367,13 +359,13 @@ async function testCollectionInheritance(): Promise<void> {
 
   // Test 4: No inheritance at all - using string path (simplest)
   console.log('\nTest 4: No inheritance - using string path');
-  const noInheritanceUsers = new FirestoreCollection<UserKey, UserData, UserDocument>('test');
+  const noInheritanceUsers = new FirestoreCollection<never, UserKey, UserData, UserDocument>('test');
   await noInheritanceUsers.get();
   console.log(`✓ String path works: Found ${noInheritanceUsers.documents.size} users`);
 
   // Test 5: No inheritance - using string[] for key (also supported)
   console.log('\nTest 5: No inheritance - using string[] key');
-  const arrayKeyUsers = new FirestoreCollection<UserKey, UserData, UserDocument>(['test']);
+  const arrayKeyUsers = new FirestoreCollection<never, UserKey, UserData, UserDocument>(['test']);
   await arrayKeyUsers.get();
   console.log(`✓ String array key works: Found ${arrayKeyUsers.documents.size} users`);
 
