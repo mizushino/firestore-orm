@@ -342,8 +342,11 @@ await batchDelete([user1, user2, user3]);
 - `deepEqual(a, b)` - Deep equality comparison
 - `parseKey(path, pathTemplate?)` - Parse Firestore path into key object
 - `buildPath(key, pathTemplate?)` - Build Firestore path from key
-- `newId(n?)` - Generate random alphanumeric ID
-- `timeId(n?)` - Generate time-based sortable ID
+- `newId(n?)` - Generate random alphanumeric ID (default: 20 chars)
+- `timeId(n?)` - Generate time-based ID with 13-digit timestamp prefix (default: 26 chars)
+  - First 13 chars: millisecond timestamp (verifiable in Firestore Rules)
+  - Remaining chars: random alphanumeric
+  - Prevents ID spoofing attacks by allowing timestamp validation
 
 ### 6. AsyncQueue
 

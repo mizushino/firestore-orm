@@ -261,13 +261,13 @@ Use static getters for `defaultKey` and `defaultData` to generate dynamic values
 ```ts
 import { FirestoreDocument } from '@mzsn/firestore/admin';
 
-// Auto-generate IDs for each new instance
+// Auto-generate time-based IDs for each new instance
 class Post extends FirestoreDocument<PostKey, PostData> {
   protected static pathTemplate = 'posts/{postId}';
 
-  // Auto-generate unique ID for each new instance
+  // Auto-generate unique, sortable, and verifiable ID for each new instance
   protected static get defaultKey(): PostKey {
-    return { postId: timeId() };
+    return { postId: timeId() };  // 26 chars: 13-digit timestamp + 13 random
   }
 
   // Fresh default data with current timestamp
@@ -883,8 +883,9 @@ import {
 // Generate random ID
 const id = newId(20);  // 20-character random ID
 
-// Generate time-based ID (sortable)
-const timeBasedId = timeId(20);  // First 9 chars are timestamp
+// Generate time-based ID (sortable and verifiable in Firestore Rules)
+const timeBasedId = timeId();  // 26 chars: 13-digit timestamp + 13 random
+const customLength = timeId(20);  // 20 chars: 13-digit timestamp + 7 random
 
 // Deep equality check
 const isEqual = deepEqual(obj1, obj2);
@@ -896,6 +897,38 @@ const key = parseKey('users/user123/posts/post456', 'users/{userId}/posts/{postI
 // Build path from key
 const path = buildPath({ userId: 'user123', postId: 'post456' }, 'users/{userId}/posts/{postId}');
 // => 'users/user123/posts/post456'
+```
+
+### Firestore Rules Validation with timeId()
+
+The `timeId()` format allows secure validation in Firestore Security Rules:
+
+```js
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Validate time-based IDs to prevent spoofing attacks
+    match /posts/{postId} {
+      allow create: if 
+        // Check ID format (26 chars with 13-digit timestamp)
+        postId.size() == 26 &&
+        // Extract timestamp and verify it's not from the future
+        int(postId.substring(0, 13)) <= request.time.toMillis() &&
+        // Optional: reject IDs older than 1 minute (prevent replay attacks)
+        int(postId.substring(0, 13)) >= request.time.toMillis() - 60000;
+      
+      allow read, update, delete: if true;
+    }
+  }
+}
+```
+
+This prevents malicious users from:
+- Creating documents with future timestamps
+- Creating documents with very old timestamps (collision attacks)
+- Using arbitrary IDs that don't follow the time-based format
+
 ```
 
 ## Development

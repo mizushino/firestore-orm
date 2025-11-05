@@ -138,20 +138,30 @@ export function newId(n = 20): string {
 /**
  * Generates a time-based ID with timestamp prefix and random suffix
  *
- * The first 9 characters are a base36-encoded timestamp, making IDs naturally
- * sortable by creation time. Remaining characters are random.
+ * The first 13 characters are the timestamp in milliseconds (decimal),
+ * making IDs naturally sortable by creation time and verifiable in Firestore Rules.
+ * Remaining characters are random alphanumeric.
  *
- * @param n - Total length of the generated ID (default: 20)
- * @returns Time-based alphanumeric string (9 chars timestamp + random suffix)
+ * This format prevents ID spoofing attacks where old timestamps could be injected,
+ * as Firestore Rules can validate: timestamp <= request.time.toMillis()
+ *
+ * @param n - Total length of the generated ID (default: 26)
+ * @returns Time-based string (13 chars timestamp + random suffix)
  * @example
- * timeId() // => 'lf2jd8k4a7xBcDeFgHiJ' (20 chars: 9 timestamp + 11 random)
- * timeId(15) // => 'lf2jd8k4aBcDeF' (15 chars: 9 timestamp + 6 random)
+ * timeId() // => '1730764800123aBcDeFgHiJkLm' (26 chars: 13 timestamp + 13 random)
+ * timeId(20) // => '1730764800123aBcDeFg' (20 chars: 13 timestamp + 7 random)
+ *
+ * // Firestore Rules validation example:
+ * // match /posts/{postId} {
+ * //   allow create: if postId.size() == 26 &&
+ * //                    int(postId.substring(0, 13)) <= request.time.toMillis();
+ * // }
  */
-export function timeId(n = 20): string {
+export function timeId(n = 26): string {
   const now = new Date();
-  const tid = now.getTime().toString(36).padStart(9, '0');
-  if (n <= 9) {
-    return tid.substring(0, n);
+  const timestamp = now.getTime().toString().padStart(13, '0');
+  if (n <= 13) {
+    return timestamp.substring(0, n);
   }
-  return tid + newId(n - 9);
+  return timestamp + newId(n - 13);
 }
