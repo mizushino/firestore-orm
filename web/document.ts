@@ -119,8 +119,8 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   /**
    * Document key used to identify this document
    */
-  public get key(): Readonly<Key | string[]> | undefined {
-    return this._key;
+  public get key(): Key | undefined {
+    return this._key as Key | undefined;
   }
 
   /**
