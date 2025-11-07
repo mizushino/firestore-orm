@@ -115,6 +115,8 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   private _snapshotQueues: AsyncQueue<FirestoreDocument<Key, Data>>[] = [];
   /** Unsubscribe function for real-time listener */
   private _unwatch?: () => void;
+  /** Cached snapshot generator */
+  private _snapshotGenerator?: AsyncGenerator<FirestoreDocument<Key, Data>>;
 
   /**
    * Document key used to identify this document
@@ -562,36 +564,47 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   }
 
   /**
-   * Creates an async generator for document snapshots
+   * Gets an async generator for document snapshots
+   * Returns the same generator instance on subsequent calls
    * @yields Document instances on each change
    */
-  public async *snapshot(): AsyncGenerator<FirestoreDocument<Key, Data>> {
-    const queue = new AsyncQueue<FirestoreDocument<Key, Data>>();
-
-    if (this.exists) {
-      queue.enqueue(this);
+  public get snapshot(): AsyncGenerator<FirestoreDocument<Key, Data>> {
+    if (this._snapshotGenerator) {
+      return this._snapshotGenerator;
     }
 
-    this._snapshotQueues.push(queue);
+    const generator = async function* (this: FirestoreDocument<Key, Data>) {
+      const queue = new AsyncQueue<FirestoreDocument<Key, Data>>();
 
-    if (!this._unwatch) {
-      this.watch(() => {
-        this._snapshotQueues.forEach((q) => q.enqueue(this));
-      });
-    }
-
-    while (this._unwatch !== undefined) {
-      const document = await queue.dequeue();
-      if (document === undefined) {
-        break;
+      if (this.exists) {
+        queue.enqueue(this);
       }
-      yield document;
-    }
 
-    this._snapshotQueues.splice(this._snapshotQueues.indexOf(queue), 1);
-    if (this._snapshotQueues.length === 0) {
-      this.unwatch();
-    }
+      this._snapshotQueues.push(queue);
+
+      if (!this._unwatch) {
+        this.watch(() => {
+          this._snapshotQueues.forEach((q) => q.enqueue(this));
+        });
+      }
+
+      while (this._unwatch !== undefined) {
+        const document = await queue.dequeue();
+        if (document === undefined) {
+          break;
+        }
+        yield document;
+      }
+
+      this._snapshotQueues.splice(this._snapshotQueues.indexOf(queue), 1);
+      if (this._snapshotQueues.length === 0) {
+        this.unwatch();
+      }
+      this._snapshotGenerator = undefined;
+    }.call(this);
+
+    this._snapshotGenerator = generator;
+    return generator;
   }
 
   /**

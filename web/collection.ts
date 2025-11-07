@@ -115,6 +115,7 @@ export class FirestoreCollection<
   protected _snapshotQueues = [] as AsyncQueue<Document[] | undefined>[];
   protected _cachedDocuments?: Document[];
   protected _unwatch?: () => void;
+  protected _snapshotGenerator?: AsyncGenerator<Document[]>;
 
   public reference?: CollectionReference<Data>;
   protected query?: Query<Data>;
@@ -384,58 +385,58 @@ export class FirestoreCollection<
   }
 
   /**
-   * Creates an async generator for real-time document updates
-   * @param node - Optional DOM node to observe for removal (auto-cleanup)
+   * Gets an async generator for real-time document updates
+   * Returns the same generator instance on subsequent calls
    * @yields Array of documents on each change
    */
-  public async *snapshot(node?: Node): AsyncGenerator<Document[]> {
-    if (!(await this.prepare())) {
-      yield [];
-      return;
+  public get snapshot(): AsyncGenerator<Document[]> {
+    if (this._snapshotGenerator) {
+      return this._snapshotGenerator;
     }
 
-    const queue = new AsyncQueue<Document[] | undefined>();
-
-    if (this._cachedDocuments !== undefined) {
-      queue.enqueue(this._cachedDocuments);
-    }
-    this._snapshotQueues.push(queue);
-
-    if (this._unwatch === undefined) {
-      this.watch((_snapshot: QuerySnapshot<Data>) => {
-        this._cachedDocuments = this.toArray();
-        this._snapshotQueues.forEach((queue) => {
-          queue.enqueue(this._cachedDocuments as Document[]);
-        });
-      });
-    }
-
-    if (node?.parentNode) {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (Array.from(mutation.removedNodes).includes(node)) {
-            queue.enqueue(undefined);
-          }
-        });
-      });
-      observer.observe(node.parentNode, { childList: true, subtree: false });
-    }
-
-    while (this._unwatch !== undefined) {
-      const document = await queue.dequeue();
-      if (document === undefined) {
-        break;
+    const generator = async function* (this: FirestoreCollection<CollectionKey, Key, Data, Document>) {
+      if (!(await this.prepare())) {
+        yield [];
+        this._snapshotGenerator = undefined;
+        return;
       }
-      yield document;
-    }
 
-    const index = this._snapshotQueues.indexOf(queue);
-    if (index >= 0) {
-      this._snapshotQueues.splice(index, 1);
-      if (this._snapshotQueues.length === 0) {
-        this.unwatch();
+      const queue = new AsyncQueue<Document[] | undefined>();
+
+      if (this._cachedDocuments !== undefined) {
+        queue.enqueue(this._cachedDocuments);
       }
-    }
+      this._snapshotQueues.push(queue);
+
+      if (this._unwatch === undefined) {
+        this.watch((_snapshot: QuerySnapshot<Data>) => {
+          this._cachedDocuments = this.toArray();
+          this._snapshotQueues.forEach((queue) => {
+            queue.enqueue(this._cachedDocuments as Document[]);
+          });
+        });
+      }
+
+      while (this._unwatch !== undefined) {
+        const document = await queue.dequeue();
+        if (document === undefined) {
+          break;
+        }
+        yield document;
+      }
+
+      const index = this._snapshotQueues.indexOf(queue);
+      if (index >= 0) {
+        this._snapshotQueues.splice(index, 1);
+        if (this._snapshotQueues.length === 0) {
+          this.unwatch();
+        }
+      }
+      this._snapshotGenerator = undefined;
+    }.call(this);
+
+    this._snapshotGenerator = generator;
+    return generator;
   }
 
   /**
