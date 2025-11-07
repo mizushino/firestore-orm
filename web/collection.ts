@@ -454,8 +454,8 @@ export class FirestoreCollection<
     if (this._unwatch) {
       this._unwatch();
       this._unwatch = undefined;
+      this._snapshotQueues = [];
     }
-    this._snapshotQueues = [];
   }
 
   /**
