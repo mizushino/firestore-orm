@@ -207,6 +207,7 @@ export class FirestoreCollection<
       }
     }
     this.isLoaded = true;
+    this._cachedDocuments = this.toArray();
   }
 
   /**
@@ -229,6 +230,7 @@ export class FirestoreCollection<
       }
     }
     this.isLoaded = true;
+    this._cachedDocuments = this.toArray();
   }
 
   /**
@@ -244,26 +246,26 @@ export class FirestoreCollection<
   /**
    * Gets documents from Firestore
    * @param cache - If true and already loaded, skip loading
-   * @returns This collection instance
+   * @returns Array of documents
    */
-  public async get(cache = false): Promise<FirestoreCollection<CollectionKey, Key, Data, Document>> {
-    if (cache && this.isLoaded) {
-      return this;
+  public async get(cache = false): Promise<Document[]> {
+    if (cache && this.isLoaded && this._cachedDocuments) {
+      return this._cachedDocuments;
     }
 
     if (!this.query) {
-      return this;
+      return [];
     }
 
     const snapshot = await getDocs(this.query);
     if (!snapshot.docs) {
-      return this;
+      return [];
     }
 
     this._documents.clear();
     this.applyDocs(snapshot.docs);
 
-    return this;
+    return this._cachedDocuments || [];
   }
 
   /**
