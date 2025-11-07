@@ -4,6 +4,7 @@ import {
   type CollectionReference,
   type DocumentChange,
   type DocumentReference,
+  type DocumentSnapshot,
   type Query,
   type QueryDocumentSnapshot,
   type QuerySnapshot,
@@ -189,8 +190,13 @@ export class FirestoreCollection<
    */
   protected applyDocs(docs: QueryDocumentSnapshot<Data>[]): void {
     for (const doc of docs) {
-      const document = this._documents.get(doc.id) ?? new this._ctor(doc.ref as unknown as Key, doc, true);
-      this._documents.set(doc.id, document);
+      const existing = this._documents.get(doc.id);
+      if (existing) {
+        (existing as FirestoreDocument<Key, Data>).setDataFromSnapshot(doc as unknown as DocumentSnapshot);
+      } else {
+        const created = new this._ctor(doc.ref as unknown as Key, doc, true);
+        this._documents.set(doc.id, created);
+      }
     }
     this.isLoaded = true;
   }
@@ -203,8 +209,13 @@ export class FirestoreCollection<
     for (const docChange of docChanges) {
       const doc = docChange.doc;
       if (docChange.type === 'added' || docChange.type === 'modified') {
-        const document = this._documents.get(doc.id) ?? new this._ctor(doc.ref as unknown as Key, doc, true);
-        this._documents.set(doc.id, document);
+        const existing = this._documents.get(doc.id);
+        if (existing) {
+          (existing as FirestoreDocument<Key, Data>).setDataFromSnapshot(doc as unknown as DocumentSnapshot);
+        } else {
+          const created = new this._ctor(doc.ref as unknown as Key, doc, true);
+          this._documents.set(doc.id, created);
+        }
       } else if (docChange.type === 'removed') {
         this._documents.delete(doc.id);
       }

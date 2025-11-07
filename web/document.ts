@@ -205,7 +205,6 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
 
     const snapshot = await (transaction ? transaction.get(this.reference) : getDoc(this.reference));
     this.setDataFromSnapshot(snapshot);
-    this._isLoaded = true;
     return this;
   }
 
@@ -631,8 +630,9 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
    * Sets _exists flag, extracts document ID and key, and unserializes data
    * @param snapshot - Firestore document snapshot
    */
-  protected setDataFromSnapshot(snapshot: DocumentSnapshot<DocumentData>): void {
+  public setDataFromSnapshot(snapshot: DocumentSnapshot<DocumentData>): void {
     this._exists = snapshot.exists();
+    this._isLoaded = true;
 
     if (!this._exists) {
       this.setData(this.static.defaultData as Data);
