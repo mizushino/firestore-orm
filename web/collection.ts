@@ -54,8 +54,8 @@ export class FirestoreCollection<
   /**
    * Collection key used to identify this collection
    */
-  public get key(): Readonly<CollectionKey | string[]> | undefined {
-    return this._key;
+  public get key(): Readonly<CollectionKey> | undefined {
+    return this._key as CollectionKey;
   }
 
   public set key(key: Readonly<CollectionKey | string[]> | undefined) {
