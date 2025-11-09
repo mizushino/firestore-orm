@@ -93,6 +93,15 @@ export class FirestoreCollection<
     return Array.from(this.documents.values());
   }
 
+  /**
+   * Returns an iterator for the documents in this collection
+   * Enables for...of iteration
+   * @returns Iterator of documents
+   */
+  public [Symbol.iterator](): Iterator<Document> {
+    return this.documents.values();
+  }
+
   protected _ctor: {
     new (
       key?: Key | string | DocumentReference,
