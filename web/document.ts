@@ -174,11 +174,6 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   ) {
     super();
 
-    const newData =
-      data && !(data instanceof DocumentSnapshot)
-        ? { ...(this.static.defaultData as Data), ...data }
-        : { ...(this.static.defaultData as Data) };
-
     if (keyOrRef instanceof DocumentReference) {
       this.setReference(keyOrRef);
     } else if (keyOrRef !== undefined) {
@@ -188,7 +183,11 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
     }
 
     this._exists = exists;
-    this.setData(newData, !exists);
+    if (data instanceof DocumentSnapshot) {
+      this.setData(data, !exists);
+    } else {
+      this.setData({ ...(this.static.defaultData as Data), ...(data ?? {}) }, !exists);
+    }
   }
 
   /**
