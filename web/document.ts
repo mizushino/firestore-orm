@@ -169,14 +169,15 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
 
   constructor(
     keyOrRef?: Key | string | DocumentReference,
-    data: Data | DocumentSnapshot | null = null,
+    data: Partial<Data> | DocumentSnapshot | null = null,
     exists = false,
   ) {
     super();
 
-    if (data === null) {
-      data = this.static.defaultData as Data;
-    }
+    const newData = {
+      ...(this.static.defaultData as Data),
+      ...(data ?? {}),
+    } as Data;
 
     if (keyOrRef instanceof DocumentReference) {
       this.setReference(keyOrRef);
@@ -187,7 +188,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
     }
 
     this._exists = exists;
-    this.setData(data, !exists);
+    this.setData(newData, !exists);
   }
 
   /**
