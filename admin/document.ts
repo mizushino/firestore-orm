@@ -65,7 +65,7 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
    * Use getter to generate fresh default values on each access (e.g., new Date())
    */
   public static get defaultData(): FirestoreData | object | undefined {
-    return undefined;
+    return {};
   }
 
   public reference?: DocumentReference;
@@ -167,10 +167,10 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
   ) {
     super();
 
-    const newData = {
-      ...(this.static.defaultData as Data),
-      ...(data ?? {}),
-    } as Data;
+    const newData =
+      data && !(data instanceof DocumentSnapshot)
+        ? { ...(this.static.defaultData as Data), ...data }
+        : { ...(this.static.defaultData as Data) };
 
     if (keyOrRef instanceof DocumentReference) {
       this.setReference(keyOrRef);
