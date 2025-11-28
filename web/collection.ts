@@ -455,7 +455,7 @@ export class FirestoreCollection<
    * @param callback - Called on each snapshot update
    * @throws {FirestoreDocumentError} If watch is already active
    */
-  public watch(callback: (snapshot: QuerySnapshot<Data>) => void): void {
+  public watch(callback: (snapshot?: QuerySnapshot<Data>) => void): void {
     if (!this.query) {
       return;
     }
@@ -464,10 +464,16 @@ export class FirestoreCollection<
       throw new FirestoreDocumentError('watch is already called');
     }
 
-    this._unwatch = onSnapshot(this.query, (snapshot: QuerySnapshot<Data>) => {
-      this.applyDocChanges(snapshot.docChanges());
-      callback(snapshot);
-    });
+    this._unwatch = onSnapshot(
+      this.query,
+      (snapshot: QuerySnapshot<Data>) => {
+        this.applyDocChanges(snapshot.docChanges());
+        callback(snapshot);
+      },
+      (_error) => {
+        callback(undefined);
+      },
+    );
   }
 
   /**

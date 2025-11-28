@@ -534,20 +534,28 @@ export class FirestoreDocument<Key = FirestoreKey, Data = FirestoreData> extends
    * @param callback - Called when document data changes
    * @returns Function to cancel the watch
    */
-  public watch(callback?: (data: Data) => void): () => void {
+  public watch(callback?: (data?: Data) => void): () => void {
     if (!this.reference) {
       throw new FirestoreDocumentError('Document reference is not set');
     }
 
     this.unwatch();
 
-    this._unwatch = onSnapshot(this.reference, (snapshot) => {
-      this.setDataFromSnapshot(snapshot);
+    this._unwatch = onSnapshot(
+      this.reference,
+      (snapshot) => {
+        this.setDataFromSnapshot(snapshot);
 
-      if (this._exists && callback) {
-        callback(this.data);
-      }
-    });
+        if (this._exists && callback) {
+          callback(this.data);
+        }
+      },
+      (_error) => {
+        if (callback) {
+          callback(undefined);
+        }
+      },
+    );
 
     return () => this.unwatch();
   }
