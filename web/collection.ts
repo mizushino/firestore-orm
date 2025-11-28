@@ -420,7 +420,7 @@ export class FirestoreCollection<
       this._snapshotQueues.push(queue);
 
       if (this._unwatch === undefined) {
-        this.watch((_snapshot: QuerySnapshot<Data>) => {
+        this.watch((_snapshot?: QuerySnapshot<Data>) => {
           this._cachedDocuments = this.toArray();
           this._snapshotQueues.forEach((queue) => {
             queue.enqueue(this._cachedDocuments as Document[]);

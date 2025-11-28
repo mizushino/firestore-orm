@@ -275,9 +275,9 @@ async function testRealtime(): Promise<void> {
 
   // Watch for changes
   let updateCount = 0;
-  const unsubscribe = user.watch((data: UserData) => {
+  const unsubscribe = user.watch((data?: UserData) => {
     updateCount++;
-    console.log(`✓ Update ${updateCount} received:`, data.name);
+    console.log(`✓ Update ${updateCount} received:`, data?.name);
   });
 
   // Make some updates
