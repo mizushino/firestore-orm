@@ -1,6 +1,6 @@
 {
   "name": "@mzsn/firestore",
-  "version": "1.2.12",
+  "version": "1.2.13",
   "description": "TypeScript-first ORM library for Firestore with support for both client-side (web) and server-side (admin) environments",
   "type": "module",
   "main": "./dist/admin/index.js",
@@ -75,7 +75,7 @@
   "homepage": "https://github.com/mizushino/firestore-orm#readme",
   "peerDependencies": {
     "firebase": ">=12.0.0",
-    "firebase-admin": ">=13.0.0"
+    "firebase-admin": ">=12.0.0"
   },
   "peerDependenciesMeta": {
     "firebase": {
@@ -87,18 +87,18 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.6.2",
-    "eslint": "^10.3.0",
+    "@types/node": "^25.9.0",
+    "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-prettier": "^5.5.5",
     "firebase": "^12.13.0",
-    "firebase-admin": "^13.9.0",
-    "firebase-tools": "^15.17.0",
+    "firebase-admin": "^12.7.0",
+    "firebase-tools": "^15.18.0",
     "prettier": "^3.8.3",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.2",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.59.2"
+    "typescript-eslint": "^8.59.3"
   }
 }
